@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Magical Saturn Particle System</title>
+    <title>Cosmic Matter Control</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -18,7 +18,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 
     <style>
-        /* Prevent pull-to-refresh and scrolling on mobile */
         body { 
             margin: 0; 
             overflow: hidden; 
@@ -29,11 +28,10 @@
             user-select: none;
         }
         
-        /* Glassmorphism UI */
         .glass-panel {
-            background: rgba(10, 10, 20, 0.65);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
+            background: rgba(10, 10, 20, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
         }
@@ -45,8 +43,8 @@
             width: 100%;
             height: 100%;
             z-index: 1;
+            background: radial-gradient(circle at center, #0f0c29 0%, #302b63 0%, #24243e 100%); 
             /* Deep Space Gradient */
-            background: radial-gradient(circle at center, #1a0b2e 0%, #000000 100%);
         }
 
         #ui-layer {
@@ -74,7 +72,7 @@
             z-index: -1;
         }
 
-        /* Mirrored Canvas (Selfie Mode) */
+        /* FORCE MIRROR ALWAYS for Selfie Feel */
         .output_canvas {
             transform: scaleX(-1); 
         }
@@ -90,19 +88,28 @@
         
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        .btn-pulse {
-            animation: scanner 2s infinite;
-        }
+        .btn-pulse { animation: scanner 2s infinite; }
         @keyframes scanner {
             0% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.7); }
             70% { box-shadow: 0 0 0 10px rgba(168, 85, 247, 0); }
             100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); }
         }
 
-        .theme-btn.active {
-            border-color: white;
-            box-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
-            transform: scale(1.15);
+        .option-btn {
+            transition: all 0.3s ease;
+            opacity: 0.6;
+        }
+        .option-btn.active {
+            opacity: 1;
+            transform: scale(1.1);
+            border-color: #a855f7;
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+        }
+        
+        /* Scatter Warning */
+        #scatter-alert {
+            opacity: 0;
+            transition: opacity 0.2s ease;
         }
     </style>
 </head>
@@ -114,138 +121,142 @@
     <!-- UI Overlay -->
     <div id="ui-layer" class="flex flex-col justify-between p-4 md:p-6 safe-area-inset">
         
-        <!-- Top Section -->
+        <!-- Header -->
         <div class="flex flex-col md:flex-row justify-between items-start gap-4">
             
-            <!-- Title Card -->
-            <div class="glass-panel rounded-2xl p-4 text-white w-full md:w-auto md:max-w-xs interactive-element transition-all border-l-4 border-purple-500">
-                <div class="flex justify-between items-center mb-2">
-                    <h1 class="text-lg md:text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-300 to-pink-400">
-                        Cosmic Saturn
+            <!-- Info Card -->
+            <div class="glass-panel rounded-2xl p-4 text-white w-full md:w-auto md:max-w-xs interactive-element border-l-4 border-purple-500 relative overflow-hidden">
+                <div id="scatter-alert" class="absolute inset-0 bg-red-500 bg-opacity-20 pointer-events-none"></div>
+                
+                <div class="flex justify-between items-center mb-2 relative z-10">
+                    <h1 class="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-300 to-pink-400">
+                        Matter Control
                     </h1>
-                    <div class="flex items-center text-[10px] md:text-xs bg-black bg-opacity-40 rounded-full px-2 py-1 border border-white/10">
+                    <div class="flex items-center text-[10px] bg-black bg-opacity-40 rounded-full px-2 py-1 border border-white/10">
                         <span id="status-indicator" class="w-1.5 h-1.5 rounded-full bg-yellow-400 mr-2 animate-pulse"></span>
                         <span id="status-text">Standby</span>
                     </div>
                 </div>
                 
-                <div class="text-[11px] md:text-xs text-gray-300 space-y-1 font-medium tracking-wide">
-                    <p class="flex items-center"><span class="mr-2 text-purple-400">🤏</span> Pinch to Resize</p>
-                    <p class="flex items-center"><span class="mr-2 text-purple-400">👋</span> Move Hand to Rotate</p>
+                <div class="text-[10px] text-gray-300 space-y-1 font-medium tracking-wide relative z-10">
+                    <p>✊ <b>Fist:</b> Scatter / Explode</p>
+                    <p>✋ <b>Open Hand:</b> Assemble</p>
+                    <p>↔️ <b>Distance:</b> Zoom In/Out</p>
                 </div>
             </div>
 
-            <!-- Camera & Controls -->
-            <div class="glass-panel rounded-2xl p-2 flex flex-row md:flex-col items-center gap-3 interactive-element">
-                <!-- Camera Preview -->
-                <div class="relative w-28 h-20 md:w-36 md:h-28 bg-black rounded-xl overflow-hidden border border-gray-700 shadow-2xl shrink-0">
+            <!-- Controls Container -->
+            <div class="glass-panel rounded-2xl p-3 flex flex-col items-center gap-3 interactive-element">
+                <!-- Camera -->
+                <div class="relative w-32 h-24 bg-black rounded-xl overflow-hidden border border-gray-700 shadow-2xl">
                     <video class="input_video" playsinline webkit-playsinline></video>
                     <canvas class="output_canvas absolute top-0 left-0 w-full h-full object-cover opacity-90"></canvas>
                     
-                    <!-- Start Button -->
                     <div id="start-overlay" class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-80 z-20 cursor-pointer backdrop-blur-sm">
-                        <button id="start-btn" class="btn-pulse bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-bold py-1.5 px-4 rounded-full transition border border-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.5)]">
-                            AWAKEN
+                        <button id="start-btn" class="btn-pulse bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-bold py-1.5 px-4 rounded-full transition border border-purple-400">
+                            LINK
                         </button>
                     </div>
-
-                    <div id="loading-spinner" class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-80 hidden">
-                        <div class="loader"></div>
-                    </div>
-                    
+                    <div id="loading-spinner" class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-80 hidden"><div class="loader"></div></div>
                     <div id="error-overlay" class="absolute inset-0 flex flex-col items-center justify-center bg-red-900 bg-opacity-95 hidden p-2 text-center z-30">
-                        <p id="error-title" class="text-[10px] font-bold text-white mb-1">Error</p>
-                        <p id="error-desc" class="text-[8px] text-gray-200 leading-tight">Check permissions.</p>
+                        <p class="text-[10px] font-bold text-white">Error</p>
+                        <p class="text-[8px] text-gray-200">Check Perms</p>
                     </div>
                 </div>
                 
-                <!-- Themes -->
-                <div class="flex flex-col justify-center w-full px-1">
-                    <label class="text-[9px] text-gray-500 mb-1 hidden md:block uppercase tracking-wider">Cosmic Themes</label>
-                    <div class="flex items-center gap-3 overflow-x-auto pb-1" id="theme-container"></div>
+                <!-- Shape Selector -->
+                <div class="w-full">
+                    <label class="text-[9px] text-gray-500 mb-1 block uppercase tracking-wider text-center">Form</label>
+                    <div class="flex justify-between gap-2">
+                        <button class="option-btn active w-6 h-6 rounded bg-gradient-to-br from-blue-500 to-purple-500" onclick="setShape('saturn')" title="Saturn"></button>
+                        <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-green-400 to-blue-500" onclick="setShape('cube')" title="Cube"></button>
+                        <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-red-500 to-orange-500" onclick="setShape('sphere')" title="Sphere"></button>
+                        <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-pink-500 to-rose-500" onclick="setShape('vortex')" title="Vortex"></button>
+                    </div>
+                </div>
+
+                <!-- Theme Selector -->
+                <div class="w-full">
+                    <label class="text-[9px] text-gray-500 mb-1 block uppercase tracking-wider text-center">Energy</label>
+                    <div class="flex items-center justify-center gap-2 overflow-x-auto pb-1" id="theme-container"></div>
                 </div>
             </div>
         </div>
 
-        <!-- Footer Stats -->
+        <!-- Footer -->
         <div class="flex justify-end pointer-events-none">
             <div class="glass-panel rounded-lg px-3 py-1.5 text-right opacity-80 scale-90 origin-bottom-right border-r-2 border-purple-500">
-                <div class="text-[9px] text-purple-300 uppercase tracking-widest">Direct Control</div>
+                <div class="text-[9px] text-purple-300 uppercase tracking-widest">Hand Tracking</div>
                 <div class="text-sm font-mono text-white font-bold flex items-center justify-end gap-2">
-                    ACTIVE <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                    <span id="zoom-val">100%</span> <span id="track-dot" class="w-1.5 h-1.5 bg-red-500 rounded-full"></span>
                 </div>
             </div>
         </div>
     </div>
 
 <script>
-    // --- Config ---
+    // --- Configuration ---
     const CONFIG = {
-        particleCount: 15000, 
-        sphereRadius: 18,
-        ringInner: 26,
-        ringOuter: 56,
+        particleCount: 16000, 
+        baseSize: 18, 
         
-        // INTERACTION CONFIG (Direct Control)
-        lerpFactor: 0.15, // Smoothness of the follow movement
-        deadZone: 0.02,
-        stabilityThreshold: 0.01, // Jitter removal: Hand must move > 1% to update
+        // Control Sensitivity
+        zoomSensitivity: 3.5,  // Multiplier for hand distance to zoom
+        baseHandSize: 0.2,     // The 'normal' hand size reference (0-1 scale)
+        fistThreshold: 0.5,    // < 0.5 means fist is closed
+        
+        lerpSpeed: 0.1,        // Smoothness of movements
+        shapeMorphSpeed: 0.05, // Speed of particles moving to new shape
+        
         historySize: 2
     };
 
-    // --- Magical Themes ---
     const THEMES = [
-        { name: 'Nebula', core: '#8A2387', ring: '#F27121' },   // Purple -> Orange
-        { name: 'Cyber',  core: '#00f260', ring: '#0575E6' },   // Green -> Blue
-        { name: 'Golden', core: '#BF953F', ring: '#FCF6BA' },   // Gold -> Pale Gold
-        { name: 'Frost',  core: '#00d2ff', ring: '#3a7bd5' },   // Cyan -> Deep Blue
-        { name: 'Crimson',core: '#870000', ring: '#190A05' }    // Red -> Dark
+        { name: 'Cosmic', core: '#a855f7', ring: '#3b82f6' },
+        { name: 'Fire',   core: '#f59e0b', ring: '#ef4444' },
+        { name: 'Toxic',  core: '#22c55e', ring: '#eab308' },
+        { name: 'Ice',    core: '#06b6d4', ring: '#3b82f6' }
     ];
     let currentTheme = THEMES[0];
+    let currentShape = 'saturn';
 
     // --- State ---
     const state = {
+        // Transform Targets
         targetScale: 1,
         currentScale: 1,
         
-        // Rotation State
-        rotY: 0,
-        rotX: 0.2,
+        targetScatter: 0,
+        currentScatter: 0,
         
-        targetRotationY: 0,
-        targetRotationX: 0.2,
+        rotY: 0, rotX: 0.2,
+        targetRotY: 0, targetRotX: 0.2,
         
         handDetected: false,
-        xHistory: [],
-        yHistory: [],
-        
-        lastStableX: 0.5,
-        lastStableY: 0.5
+        xHistory: [], yHistory: [],
+        lastStableX: 0.5, lastStableY: 0.5
     };
 
-    // --- Texture Engine: "Stardust" ---
+    // --- Texture ---
     function getTexture() {
         const canvas = document.createElement('canvas');
-        canvas.width = 64;
-        canvas.height = 64;
+        canvas.width = 128; canvas.height = 128;
         const ctx = canvas.getContext('2d');
+        const cx = 64; const cy = 64;
         
-        const cx = 32;
-        const cy = 32;
-
-        // 1. Soft Halo
-        const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, 32);
+        // Sharp star burst
+        const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, 64);
         gradient.addColorStop(0, 'rgba(255, 255, 255, 1)'); 
-        gradient.addColorStop(0.2, 'rgba(255, 255, 255, 0.8)');
-        gradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.1)');
+        gradient.addColorStop(0.15, 'rgba(255, 255, 255, 0.9)'); 
+        gradient.addColorStop(0.4, 'rgba(255, 255, 255, 0.2)');
         gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
         ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, 64, 64);
-
-        // 2. Sharp Star Core
+        ctx.fillRect(0, 0, 128, 128);
+        
+        // Core center
         ctx.beginPath();
-        ctx.arc(cx, cy, 4, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+        ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+        ctx.fillStyle = '#FFFFFF';
         ctx.fill();
 
         const texture = new THREE.Texture(canvas);
@@ -253,122 +264,165 @@
         return texture;
     }
 
-    // --- Three.js Setup ---
+    // --- Three.js ---
     const container = document.getElementById('canvas-container');
     const scene = new THREE.Scene();
-    
-    // Magical Fog
-    scene.fog = new THREE.FogExp2(0x1a0b2e, 0.008); 
+    scene.fog = new THREE.FogExp2(0x000000, 0.005);
 
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.z = 80;
-    camera.position.y = 15;
+    camera.position.y = 0;
     camera.lookAt(0, 0, 0);
 
-    const renderer = new THREE.WebGLRenderer({ 
-        antialias: false, 
-        alpha: true, 
-        powerPreference: "high-performance" 
-    });
+    const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, powerPreference: "high-performance" });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio); 
+    renderer.setPixelRatio(window.devicePixelRatio);
     container.appendChild(renderer.domElement);
 
-    // --- Background Stars (Twinkling) ---
-    const starGeo = new THREE.BufferGeometry();
-    const starPos = [];
-    const starSizes = [];
-    for(let i=0; i<800; i++) {
-        starPos.push((Math.random() - 0.5) * 600);
-        starPos.push((Math.random() - 0.5) * 600);
-        starPos.push((Math.random() - 0.5) * 600);
-        starSizes.push(Math.random());
-    }
-    starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
-    starGeo.setAttribute('size', new THREE.Float32BufferAttribute(starSizes, 1));
-    
-    const starMat = new THREE.PointsMaterial({
-        color: 0xffffff, 
-        size: 0.8, 
-        transparent: true, 
-        opacity: 0.8,
-        map: getTexture(),
-        blending: THREE.AdditiveBlending,
-        depthWrite: false
-    });
-    const stars = new THREE.Points(starGeo, starMat);
-    scene.add(stars);
-
-    // --- Saturn Particles ---
+    // --- Particles & Buffers ---
     const particlesGeometry = new THREE.BufferGeometry();
-    const positions = [];
-    const colors = [];
-    const sizes = [];
-    const phases = []; // For twinkling animation
     
-    const colorCore = new THREE.Color(currentTheme.core);
-    const colorRing = new THREE.Color(currentTheme.ring);
-    
-    // 1. Planet Core
-    const coreCount = Math.floor(CONFIG.particleCount * 0.4);
-    for (let i = 0; i < coreCount; i++) {
-        const phi = Math.acos(-1 + (2 * i) / coreCount);
-        const theta = Math.sqrt(coreCount * Math.PI) * phi;
-        
-        const fuzz = (Math.random() - 0.5) * 0.5; 
-        const r = CONFIG.sphereRadius + fuzz; 
-        
-        const x = r * Math.cos(theta) * Math.sin(phi);
-        const y = r * Math.sin(theta) * Math.sin(phi);
-        const z = r * Math.cos(phi);
+    // Arrays to hold data
+    // currentPos: Where the particle IS right now
+    // targetPos: Where the particle WANTS to go (based on shape)
+    // scatterPos: Where the particle goes when exploded
+    const currentPositions = new Float32Array(CONFIG.particleCount * 3);
+    const targetPositions = new Float32Array(CONFIG.particleCount * 3);
+    const scatterVectors = new Float32Array(CONFIG.particleCount * 3);
+    const colors = new Float32Array(CONFIG.particleCount * 3);
+    const sizes = new Float32Array(CONFIG.particleCount);
 
-        positions.push(x, y, z);
+    // Initialize Arrays
+    for(let i=0; i<CONFIG.particleCount; i++) {
+        // Scatter vectors (Random explosion direction)
+        const u = Math.random();
+        const v = Math.random();
+        const theta = 2 * Math.PI * u;
+        const phi = Math.acos(2 * v - 1);
+        const r = 40 + Math.random() * 60; // Scatter radius
+        const sx = r * Math.sin(phi) * Math.cos(theta);
+        const sy = r * Math.sin(phi) * Math.sin(theta);
+        const sz = r * Math.cos(phi);
         
-        // Color Banding
-        const lat = (y / CONFIG.sphereRadius + 1) * 0.5;
-        const bandMix = Math.sin(lat * 25) * 0.15 + 0.85; 
+        scatterVectors[i*3] = sx;
+        scatterVectors[i*3+1] = sy;
+        scatterVectors[i*3+2] = sz;
         
-        const pc = colorCore.clone();
-        const hsl = {};
-        pc.getHSL(hsl);
-        pc.setHSL(hsl.h, hsl.s, hsl.l * bandMix);
-        colors.push(pc.r, pc.g, pc.b);
-        
-        sizes.push(1.0 + Math.random() * 0.5);
-        phases.push(Math.random() * Math.PI * 2);
-    }
-    
-    // 2. Rings
-    const ringCount = CONFIG.particleCount - coreCount;
-    for (let i = 0; i < ringCount; i++) {
-        const r = THREE.MathUtils.randFloat(CONFIG.ringInner, CONFIG.ringOuter);
-        const theta = Math.random() * Math.PI * 2;
-        const x = r * Math.cos(theta);
-        const z = r * Math.sin(theta);
-        const y = (Math.random() - 0.5) * 0.2; 
-
-        positions.push(x, y, z);
-        
-        const mix = (r - CONFIG.ringInner) / (CONFIG.ringOuter - CONFIG.ringInner);
-        const c = new THREE.Color().lerpColors(colorCore, colorRing, mix);
-        
-        colors.push(c.r, c.g, c.b);
-        sizes.push(0.5 + Math.random() * 0.5);
-        phases.push(Math.random() * Math.PI * 2);
+        sizes[i] = 0.8 + Math.random() * 1.0;
     }
 
-    particlesGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    particlesGeometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-    particlesGeometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
-    particlesGeometry.setAttribute('phase', new THREE.Float32BufferAttribute(phases, 1));
+    // --- Shape Generators ---
+    function generateShape(type) {
+        const newPos = new Float32Array(CONFIG.particleCount * 3);
+        const newCol = new Float32Array(CONFIG.particleCount * 3);
+        const c1 = new THREE.Color(currentTheme.core);
+        const c2 = new THREE.Color(currentTheme.ring);
+
+        for(let i=0; i<CONFIG.particleCount; i++) {
+            let x, y, z, r, g, b;
+            const ix = i*3;
+
+            if (type === 'saturn') {
+                // Sphere + Ring
+                if (i < CONFIG.particleCount * 0.4) {
+                    // Core
+                    const phi = Math.acos(-1 + (2 * i) / (CONFIG.particleCount * 0.4));
+                    const theta = Math.sqrt((CONFIG.particleCount * 0.4) * Math.PI) * phi;
+                    const rad = CONFIG.baseSize + (Math.random()-0.5);
+                    x = rad * Math.cos(theta) * Math.sin(phi);
+                    y = rad * Math.sin(theta) * Math.sin(phi);
+                    z = rad * Math.cos(phi);
+                    r=c1.r; g=c1.g; b=c1.b;
+                } else {
+                    // Rings
+                    const rad = THREE.MathUtils.randFloat(26, 52);
+                    const theta = Math.random() * Math.PI * 2;
+                    x = rad * Math.cos(theta);
+                    z = rad * Math.sin(theta);
+                    y = (Math.random()-0.5) * 0.5;
+                    const mix = (rad-26)/(52-26);
+                    const c = new THREE.Color().lerpColors(c1, c2, mix);
+                    r=c.r; g=c.g; b=c.b;
+                }
+            } 
+            else if (type === 'cube') {
+                // Surface of a Cube
+                const side = CONFIG.baseSize * 1.5;
+                const face = Math.floor(Math.random() * 6);
+                const u = (Math.random() - 0.5) * 2 * side;
+                const v = (Math.random() - 0.5) * 2 * side;
+                
+                if (face===0) { x=side; y=u; z=v; }
+                else if (face===1) { x=-side; y=u; z=v; }
+                else if (face===2) { x=u; y=side; z=v; }
+                else if (face===3) { x=u; y=-side; z=v; }
+                else if (face===4) { x=u; y=v; z=side; }
+                else { x=u; y=v; z=-side; }
+                
+                // Add noise for "Electric Cube" look
+                x += (Math.random()-0.5);
+                y += (Math.random()-0.5);
+                z += (Math.random()-0.5);
+                
+                const dist = Math.abs(u) + Math.abs(v); // Color gradient based on center
+                const mix = Math.min(dist / (side*2), 1);
+                const c = new THREE.Color().lerpColors(c1, c2, mix);
+                r=c.r; g=c.g; b=c.b;
+            }
+            else if (type === 'sphere') {
+                // Dyson Sphere (Hollow)
+                const phi = Math.acos(-1 + (2 * i) / CONFIG.particleCount);
+                const theta = Math.sqrt(CONFIG.particleCount * Math.PI) * phi;
+                const rad = CONFIG.baseSize * 1.5;
+                x = rad * Math.cos(theta) * Math.sin(phi);
+                y = rad * Math.sin(theta) * Math.sin(phi);
+                z = rad * Math.cos(phi);
+                
+                // Grid pattern logic
+                const lat = Math.abs(y/rad);
+                const c = new THREE.Color().lerpColors(c1, c2, lat);
+                r=c.r; g=c.g; b=c.b;
+            }
+            else if (type === 'vortex') {
+                // Galaxy Spiral
+                const branchAngle = (i % 3) * ((2 * Math.PI) / 3);
+                const rad = Math.random() * 50;
+                const spin = rad * 0.1;
+                const angle = branchAngle + spin;
+                
+                // Spiral arms
+                x = Math.cos(angle) * rad;
+                z = Math.sin(angle) * rad;
+                y = (Math.random() - 0.5) * (10 - rad * 0.15); // Thicker center
+                
+                const mix = rad / 50;
+                const c = new THREE.Color().lerpColors(c1, c2, mix);
+                r=c.r; g=c.g; b=c.b;
+            }
+
+            newPos[ix] = x; newPos[ix+1] = y; newPos[ix+2] = z;
+            newCol[ix] = r; newCol[ix+1] = g; newCol[ix+2] = b;
+        }
+        return { pos: newPos, col: newCol };
+    }
+
+    // Initial Generation
+    const initData = generateShape('saturn');
+    targetPositions.set(initData.pos);
+    currentPositions.set(initData.pos);
+    colors.set(initData.col);
+
+    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(currentPositions, 3));
+    particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    particlesGeometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
 
     const particlesMaterial = new THREE.PointsMaterial({
-        size: 1.0, 
-        map: getTexture(), 
+        size: 1.2,
+        map: getTexture(),
         vertexColors: true,
         transparent: true,
-        opacity: 1.0,
-        blending: THREE.AdditiveBlending, // Glowy look
+        opacity: 0.9,
+        blending: THREE.NormalBlending, // Avoid washout
         depthWrite: false,
         sizeAttenuation: true
     });
@@ -378,173 +432,134 @@
 
     // --- UI Logic ---
     const themeContainer = document.getElementById('theme-container');
-    
+    const zoomVal = document.getElementById('zoom-val');
+    const trackDot = document.getElementById('track-dot');
+    const scatterAlert = document.getElementById('scatter-alert');
+
+    // Theme Buttons
     THEMES.forEach((theme, index) => {
         const btn = document.createElement('div');
-        btn.className = `theme-btn min-w-[24px] w-6 h-6 rounded-full cursor-pointer border-2 border-white/20 transition-all duration-200 ${index === 0 ? 'active' : ''}`;
+        btn.className = `w-6 h-6 rounded-full cursor-pointer border-2 border-white/20 transition-all ${index === 0 ? 'scale-110 border-white shadow-lg' : ''}`;
         btn.style.background = `linear-gradient(135deg, ${theme.core} 0%, ${theme.ring} 100%)`;
-        btn.addEventListener('click', () => applyTheme(theme, btn));
+        btn.onclick = () => {
+            currentTheme = theme;
+            document.querySelectorAll('#theme-container div').forEach(b => b.classList.remove('scale-110', 'border-white', 'shadow-lg'));
+            btn.classList.add('scale-110', 'border-white', 'shadow-lg');
+            updateShapeData(); // Refresh colors
+        };
         themeContainer.appendChild(btn);
     });
 
-    function applyTheme(theme, btnElement) {
-        currentTheme = theme;
-        document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
-        if(btnElement) btnElement.classList.add('active');
+    // Shape Switcher
+    window.setShape = (shape) => {
+        currentShape = shape;
+        document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+        updateShapeData();
+    };
 
-        const colorC = new THREE.Color(theme.core);
-        const colorR = new THREE.Color(theme.ring);
-        const colorsAttr = particlesGeometry.attributes.color;
-        const positionsAttr = particlesGeometry.attributes.position;
-        const coreCount = Math.floor(CONFIG.particleCount * 0.4);
+    function updateShapeData() {
+        const data = generateShape(currentShape);
+        // We do NOT snap targetPositions. We define them as the new destination.
+        // The animate loop will lerp currentPositions -> targetPositions.
+        // But since we want the *colors* to change too, we need to handle that.
+        // For simplicity in this demo, we snap the target array data.
         
-        for(let i=0; i < coreCount; i++) {
-            const y = positionsAttr.getY(i);
-            const lat = (y / CONFIG.sphereRadius + 1) * 0.5;
-            const bandMix = Math.sin(lat * 25) * 0.15 + 0.85;
-            const pc = colorC.clone();
-            const hsl = {};
-            pc.getHSL(hsl);
-            pc.setHSL(hsl.h, hsl.s, hsl.l * bandMix);
-            colorsAttr.setXYZ(i, pc.r, pc.g, pc.b);
+        // We copy the new shape calculation into the target buffer
+        for(let i=0; i<data.pos.length; i++) {
+            targetPositions[i] = data.pos[i];
+            colors[i] = data.col[i]; // Instant color change for responsiveness
         }
-        
-        for(let i = coreCount; i < CONFIG.particleCount; i++) {
-            const x = positionsAttr.getX(i);
-            const z = positionsAttr.getZ(i);
-            const dist = Math.sqrt(x*x + z*z);
-            let mix = (dist - CONFIG.ringInner) / (CONFIG.ringOuter - CONFIG.ringInner);
-            if (mix < 0) mix = 0; if (mix > 1) mix = 1;
-            const c = new THREE.Color().lerpColors(colorC, colorR, mix);
-            colorsAttr.setXYZ(i, c.r, c.g, c.b);
-        }
-        colorsAttr.needsUpdate = true;
+        particlesGeometry.attributes.color.needsUpdate = true;
     }
 
-    function getWeightedAverage(history) {
-        if(history.length === 0) return 0.5;
-        let sum = 0, weightSum = 0;
-        for(let i=0; i<history.length; i++) {
-            const w = i + 1;
-            sum += history[i] * w;
-            weightSum += w;
-        }
-        return sum / weightSum;
-    }
-
-    // --- MediaPipe ---
+    // --- MediaPipe Logic ---
     const videoElement = document.getElementsByClassName('input_video')[0];
     const canvasElement = document.getElementsByClassName('output_canvas')[0];
     const canvasCtx = canvasElement.getContext('2d');
-    const statusText = document.getElementById('status-text');
-    const statusInd = document.getElementById('status-indicator');
     const loader = document.getElementById('loading-spinner');
     const startBtn = document.getElementById('start-btn');
     const startOverlay = document.getElementById('start-overlay');
-    const errorOverlay = document.getElementById('error-overlay');
 
     function onResults(results) {
         if (loader.style.display !== 'none') {
             loader.style.display = 'none';
-            statusText.textContent = "System Active";
-            statusInd.classList.replace('bg-yellow-400', 'bg-green-400');
+            document.getElementById('status-text').textContent = "Connected";
+            document.getElementById('status-indicator').classList.replace('bg-yellow-400', 'bg-green-400');
         }
 
+        // Draw Feed
         canvasElement.width = results.image.width;
         canvasElement.height = results.image.height;
-
         canvasCtx.save();
         canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-        
-        // Draw image mirrored visually
-        canvasCtx.filter = 'grayscale(100%) contrast(1.2) brightness(0.8)';
-        canvasCtx.save();
-        canvasCtx.scale(-1, 1);
-        canvasCtx.drawImage(results.image, -canvasElement.width, 0, canvasElement.width, canvasElement.height);
-        canvasCtx.restore();
-        canvasCtx.filter = 'none'; 
+        // Draw normal - CSS mirrors it
+        canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
         
         if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
             const landmarks = results.multiHandLandmarks[0];
             state.handDetected = true;
+            trackDot.classList.replace('bg-red-500', 'bg-green-500');
 
-            const themeColor = currentTheme.core; 
+            drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: 'rgba(168, 85, 247, 0.5)', lineWidth: 2});
+            drawLandmarks(canvasCtx, landmarks, {color: '#FFFFFF', lineWidth: 1, radius: 2});
+
+            // --- 1. ZOOM (Distance) ---
+            const wrist = landmarks[0];
+            const midMCP = landmarks[9];
+            // Hand size on screen (0.0 to 1.0 approx)
+            const handSize = Math.hypot(wrist.x - midMCP.x, wrist.y - midMCP.y);
             
-            // Re-draw image normally for overlay consistency
-            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-            canvasCtx.filter = 'grayscale(100%) contrast(1.2) brightness(0.8)';
-            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
-            canvasCtx.filter = 'none';
+            // Logic: handSize / baseSize. 
+            // If hand is 0.2 (normal) -> scale 1.
+            // If hand is 0.4 (close) -> scale 2.
+            // If hand is 0.1 (far) -> scale 0.5.
+            let zoom = handSize / CONFIG.baseHandSize;
+            zoom = Math.max(0.2, Math.min(zoom, 3.0)); // Clamp
+            state.targetScale = zoom;
+            zoomVal.textContent = Math.round(zoom * 100) + "%";
 
-            drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: 'rgba(255,255,255,0.3)', lineWidth: 2});
-            drawLandmarks(canvasCtx, landmarks, {color: themeColor, lineWidth: 1, radius: 2});
-
-            state.xHistory.push(landmarks[9].x);
-            state.yHistory.push(landmarks[9].y);
-            if(state.xHistory.length > CONFIG.historySize) state.xHistory.shift();
-            if(state.yHistory.length > CONFIG.historySize) state.yHistory.shift();
-
-            const smoothedX = getWeightedAverage(state.xHistory);
-            const smoothedY = getWeightedAverage(state.yHistory);
-
-            // --- DIRECT MAPPING LOGIC (No Inertia) ---
-            
-            // Calculate differences for stability check
-            const deltaX = Math.abs(smoothedX - state.lastStableX);
-            const deltaY = Math.abs(smoothedY - state.lastStableY);
-            
-            let stableX = state.lastStableX;
-            let stableY = state.lastStableY;
-
-            // STABILITY GATE: Only update if moved enough
-            if (deltaX > CONFIG.stabilityThreshold) {
-                state.lastStableX = smoothedX;
-                stableX = smoothedX;
-            }
-            if (deltaY > CONFIG.stabilityThreshold) {
-                state.lastStableY = smoothedY;
-                stableY = smoothedY;
-            }
-
-            // Map Position Directly to Rotation Angle
-            // Hand Right (x=0 due to mirror) -> Offset +0.5 -> Rotation +
-            const xOffset = 0.5 - stableX; 
-            const yOffset = 0.5 - stableY;
-            
-            const sensitivity = 5.0; // Multiplier for how much it rotates
-            
-            state.targetRotationY = xOffset * sensitivity;
-            state.targetRotationX = yOffset * sensitivity;
-
-            // Pinch Scale
+            // --- 2. SCATTER (Fist) ---
             const thumbTip = landmarks[4];
             const indexTip = landmarks[8];
-            const wrist = landmarks[0];
             const pinchDist = Math.hypot(thumbTip.x - indexTip.x, thumbTip.y - indexTip.y);
-            const scaleRef = Math.hypot(wrist.x - landmarks[5].x, wrist.y - landmarks[5].y);
-            const normalizedOpenness = pinchDist / scaleRef;
-            let expansion = (normalizedOpenness - 0.25) * 2.5; 
-            if (expansion < 0.15) expansion = 0.15; 
-            if (expansion > 3.5) expansion = 3.5;
-            state.targetScale = expansion;
+            // Normalize against hand size so it works at any distance
+            const openness = pinchDist / handSize; 
+            
+            // Fist = Scatter
+            if (openness < CONFIG.fistThreshold) {
+                state.targetScatter = 1.0;
+                scatterAlert.style.opacity = 1;
+            } else {
+                state.targetScatter = 0.0;
+                scatterAlert.style.opacity = 0;
+            }
+
+            // --- 3. ROTATION (Position) ---
+            const x = landmarks[9].x;
+            const y = landmarks[9].y;
+            
+            // Map 0..1 to rotation
+            // Mirror logic: Hand Right (x=0) -> Rot Right (+)
+            // Center is 0.5
+            state.targetRotY = (0.5 - x) * 4.0;
+            state.targetRotX = (0.5 - y) * 4.0;
 
         } else {
             state.handDetected = false;
-            state.targetScale = 1;
-            state.xHistory = [];
-            state.yHistory = [];
+            trackDot.classList.replace('bg-green-500', 'bg-red-500');
+            state.targetScatter = 0;
+            state.targetScale = 1; // Reset zoom
+            scatterAlert.style.opacity = 0;
             
-            // Gentle Idle
-            state.targetRotationY += 0.001; 
-            // Slowly return X to center
-            state.targetRotationX = state.rotX * 0.95 + 0.2 * 0.05;
+            // Idle Spin
+            state.targetRotY += 0.002;
+            state.targetRotX = state.rotX * 0.9 + 0.2 * 0.1;
         }
         canvasCtx.restore();
     }
 
-    const hands = new Hands({locateFile: (file) => {
-        return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
-    }});
+    const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
     hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
     hands.onResults(onResults);
 
@@ -553,77 +568,89 @@
         width: 320, height: 240
     });
     
-    startBtn.addEventListener('click', () => {
-        if (window.location.protocol === 'file:') {
-            document.getElementById('error-title').textContent = "Security Error";
-            document.getElementById('error-desc').textContent = "Run via local server.";
-            errorOverlay.style.display = 'flex';
-            return;
-        }
+    startBtn.onclick = () => {
         startOverlay.style.display = 'none';
         loader.style.display = 'flex';
-        statusText.textContent = "Connecting...";
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 320 }, height: { ideal: 240 } } })
-            .then(stream => {
-                stream.getTracks().forEach(track => track.stop()); 
-                statusText.textContent = "Calibrating...";
-                cameraUtils.start().catch(console.error);
-            }).catch(console.error);
-    });
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } }).then(s => {
+            s.getTracks().forEach(t=>t.stop());
+            cameraUtils.start();
+        });
+    };
 
+    // --- Animation Loop ---
     const clock = new THREE.Clock();
 
     function animate() {
         requestAnimationFrame(animate);
         const time = clock.getElapsedTime();
 
-        // 1. Direct Control Update
-        if (state.handDetected) {
-            // Smoothly interpolate towards the target angle
-            state.rotY += (state.targetRotationY - state.rotY) * CONFIG.lerpFactor;
-            state.rotX += (state.targetRotationX - state.rotX) * CONFIG.lerpFactor;
-        } else {
-            // Idle behavior
-            state.rotY += 0.001;
-            state.rotX += (state.targetRotationX - state.rotX) * 0.05;
-        }
+        // 1. Smooth Interps
+        state.currentScale += (state.targetScale - state.currentScale) * CONFIG.lerpSpeed;
+        state.currentScatter += (state.targetScatter - state.currentScatter) * 0.05; // Slower scatter scatter
         
-        // Scale Lerp
-        state.currentScale += (state.targetScale - state.currentScale) * 0.1;
+        if (state.handDetected) {
+            state.rotY += (state.targetRotY - state.rotY) * CONFIG.lerpSpeed;
+            state.rotX += (state.targetRotX - state.rotX) * CONFIG.lerpSpeed;
+        } else {
+            state.rotY += 0.002;
+            state.rotX += (state.targetRotX - state.rotX) * 0.05;
+        }
 
-        // 2. Scene Updates
+        // 2. Global Transforms
         particleSystem.rotation.y = state.rotY;
         particleSystem.rotation.x = state.rotX;
-        particleSystem.rotation.z = Math.cos(time * 0.1) * 0.05;
-
-        // 3. Particle Animation (Twinkle & Flow)
-        const positionsAttribute = particlesGeometry.attributes.position;
-        const positionsArray = positionsAttribute.array;
-        
-        for (let i = 0; i < CONFIG.particleCount; i++) {
-            if (i > CONFIG.particleCount * 0.4) {
-                 // Rings flow
-                 const ix = i * 3;
-                 const iy = i * 3 + 1;
-                 const iz = i * 3 + 2;
-                 
-                 // Magical drift
-                 const x = positionsArray[ix];
-                 const z = positionsArray[iz];
-                 positionsArray[iy] = (Math.sin(time * 2 + x * 0.1) * 0.05) * state.currentScale;
-            }
-        }
-        positionsAttribute.needsUpdate = true;
-        
-        // Scale the whole system
         particleSystem.scale.set(state.currentScale, state.currentScale, state.currentScale);
 
-        // Background rotation
-        stars.rotation.y = time * 0.01;
+        // 3. Particle Morphing & Physics
+        const posAttr = particlesGeometry.attributes.position;
         
+        for(let i=0; i<CONFIG.particleCount; i++) {
+            const ix = i*3; const iy = i*3+1; const iz = i*3+2;
+            
+            // A. Morphing: Move Current Position towards Target Shape Position
+            // This creates the shape-shifting animation
+            let cx = currentPositions[ix];
+            let cy = currentPositions[iy];
+            let cz = currentPositions[iz];
+            
+            const tx = targetPositions[ix];
+            const ty = targetPositions[iy];
+            const tz = targetPositions[iz];
+            
+            // Lerp towards target shape
+            cx += (tx - cx) * CONFIG.shapeMorphSpeed;
+            cy += (ty - cy) * CONFIG.shapeMorphSpeed;
+            cz += (tz - cz) * CONFIG.shapeMorphSpeed;
+            
+            currentPositions[ix] = cx;
+            currentPositions[iy] = cy;
+            currentPositions[iz] = cz;
+
+            // B. Scattering: Mix Morph Position with Explosion Position
+            const sx = scatterVectors[ix];
+            const sy = scatterVectors[iy];
+            const sz = scatterVectors[iz];
+            
+            // Final render position
+            // If scatter is 0, use shape position (cx). If 1, use scatter position (sx).
+            const fx = cx + (sx - cx) * state.currentScatter;
+            const fy = cy + (sy - cy) * state.currentScatter;
+            const fz = cz + (sz - cz) * state.currentScatter;
+            
+            // C. Idle Animation (Breathing/Twinkle) - Only if not scattered
+            let noise = 0;
+            if (state.currentScatter < 0.1) {
+                noise = Math.sin(time * 2 + i) * 0.05;
+            }
+
+            posAttr.setXYZ(i, fx + noise, fy + noise, fz + noise);
+        }
+        
+        posAttr.needsUpdate = true;
         renderer.render(scene, camera);
     }
     animate();
+
     window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
