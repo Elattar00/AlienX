@@ -255,20 +255,12 @@
         
         // Zoom limits
         MIN_ZOOM: 0.2,
-        MAX_ZOOM: 10.0,
+        MAX_ZOOM: 10.0, // Changed from 8.0 to 10.0
         
         // Scene dimensions
         SCENE_BOUNDS: 1200,
         STARFIELD_BOUNDS_SMALL: 1200,
-        STARFIELD_BOUNDS_LARGE: 800,
-        
-        // Rotation sensitivity (CHANGED: Made horizontal rotation more sensitive)
-        ROTATION_SENSITIVITY_X: 5.0,  // Increased from ~4.0 for better horizontal feel
-        ROTATION_SENSITIVITY_Y: 3.5,  // Slightly increased for better vertical feel
-        
-        // Camera resolution (CHANGED: Reduced from 320x240 to 240x180 for performance)
-        CAMERA_WIDTH: 240,
-        CAMERA_HEIGHT: 180
+        STARFIELD_BOUNDS_LARGE: 800
     };
 
     // --- Config & Themes ---
@@ -851,13 +843,12 @@
             
             this.hands.onResults(this.onResults.bind(this));
             
-            // CHANGED: Reduced camera resolution from 320x240 to 240x180
             this.cameraUtils = new Camera(this.videoElement, {
                 onFrame: async () => {
                     await this.hands.send({ image: this.videoElement });
                 },
-                width: CONSTANTS.CAMERA_WIDTH,    // Reduced from 320 to 240
-                height: CONSTANTS.CAMERA_HEIGHT   // Reduced from 240 to 180
+                width: 320,
+                height: 240
             });
         }
         
@@ -963,11 +954,8 @@
                 
                 const x = stableX;
                 const y = stableY;
-                
-                // CHANGED: Improved rotation sensitivity for smoother, more natural feel
-                // Increased horizontal sensitivity (Y-axis rotation) for easier left/right control
-                state.targetRotY = (0.5 - x) * CONSTANTS.ROTATION_SENSITIVITY_X; // Horizontal (left/right)
-                state.targetRotX = (0.5 - y) * CONSTANTS.ROTATION_SENSITIVITY_Y; // Vertical (up/down)
+                state.targetRotY = (0.5 - x) * 4.0;
+                state.targetRotX = (0.5 - y) * 4.0;
             } else {
                 state.resetOnHandLoss();
                 uiManager.updateTracking('lost');
@@ -1021,17 +1009,13 @@
             state.currentScatter += (state.targetScatter - state.currentScatter) * 0.4;
         }
         
-        // CHANGED: Improved rotation interpolation for smoother feel
-        // Using slightly faster interpolation for more responsive rotation
-        const rotationLerpSpeed = state.handDetected ? 0.25 : 0.05; // Increased from 0.15/0.05
-        
-        // Update rotation with improved smoothness
-        state.rotY += (state.targetRotY - state.rotY) * rotationLerpSpeed;
-        state.rotX += (state.targetRotX - state.rotX) * rotationLerpSpeed;
-        
-        // Small continuous rotation when no hand detected
-        if (!state.handDetected) {
-            state.rotY += 0.001; // Reduced from 0.002 for smoother auto-rotation
+        // Update rotation
+        if (state.handDetected) {
+            state.rotY += (state.targetRotY - state.rotY) * CONSTANTS.LERP_SPEED;
+            state.rotX += (state.targetRotX - state.rotX) * CONSTANTS.LERP_SPEED;
+        } else {
+            state.rotY += 0.002;
+            state.rotX += (state.targetRotX - state.rotX) * 0.05;
         }
         
         // Update particle system
