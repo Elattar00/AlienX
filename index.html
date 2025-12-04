@@ -100,32 +100,12 @@
         .option-btn {
             transition: all 0.3s ease;
             opacity: 0.6;
-            position: relative;
         }
         .option-btn.active {
             opacity: 1;
             transform: scale(1.1);
             border-color: #a855f7;
             box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
-        }
-        .option-btn::after {
-            content: attr(title);
-            position: absolute;
-            bottom: -25px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.8);
-            color: white;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 10px;
-            white-space: nowrap;
-            opacity: 0;
-            transition: opacity 0.2s;
-            pointer-events: none;
-        }
-        .option-btn:hover::after {
-            opacity: 1;
         }
         
         /* Scatter Warning - Now Cyan/Blue instead of Red */
@@ -135,43 +115,6 @@
             color: #22d3ee; 
             font-weight: bold;
             text-shadow: 0 0 5px rgba(34, 211, 238, 0.5);
-        }
-
-        .shape-label {
-            display: none;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-size: 9px;
-            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
-            font-weight: bold;
-            pointer-events: none;
-        }
-        .option-btn.active .shape-label {
-            display: block;
-        }
-
-        /* Connection status animations */
-        .connection-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 6px;
-        }
-        .connection-dot.connected { background-color: #10B981; animation: pulse 2s infinite; }
-        .connection-dot.connecting { background-color: #F59E0B; animation: blink 1s infinite; }
-        .connection-dot.disconnected { background-color: #EF4444; }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.2; }
         }
     </style>
 </head>
@@ -189,8 +132,8 @@
                         Matter Control
                     </h1>
                     <div class="flex items-center text-[10px] bg-black bg-opacity-40 rounded-full px-2 py-1 border border-white/10">
-                        <span id="connection-dot" class="connection-dot connecting"></span>
-                        <span id="status-text">Connecting...</span>
+                        <span id="status-indicator" class="w-1.5 h-1.5 rounded-full bg-yellow-400 mr-2 animate-pulse"></span>
+                        <span id="status-text">Standby</span>
                     </div>
                 </div>
                 
@@ -198,7 +141,6 @@
                     <p>✊ <b>Fist:</b> Scatter <span id="scatter-text">ACTIVE</span></p>
                     <p>✋ <b>Opening:</b> Assemble</p>
                     <p>↔️ <b>Distance:</b> Zoom In/Out</p>
-                    <p class="mt-2 pt-2 border-t border-white/10" id="stats-info">Particles: Loading...</p>
                 </div>
             </div>
 
@@ -216,9 +158,8 @@
                     </div>
                     <div id="loading-spinner" class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-80 hidden"><div class="loader"></div></div>
                     <div id="error-overlay" class="absolute inset-0 flex flex-col items-center justify-center bg-red-900 bg-opacity-95 hidden p-2 text-center z-30">
-                        <p class="text-[10px] font-bold text-white">Camera Error</p>
-                        <p class="text-[8px] text-gray-200">Check permissions & refresh</p>
-                        <button id="retry-btn" class="mt-2 text-[8px] bg-white text-black px-3 py-1 rounded">Retry</button>
+                        <p class="text-[10px] font-bold text-white">Error</p>
+                        <p class="text-[8px] text-gray-200">Check Perms</p>
                     </div>
                 </div>
                 
@@ -226,30 +167,14 @@
                 <div class="w-full">
                     <label class="text-[9px] text-gray-500 mb-1 block uppercase tracking-wider text-center">Form</label>
                     <div class="flex justify-between gap-1 flex-wrap">
-                        <button class="option-btn active w-6 h-6 rounded bg-gradient-to-br from-blue-500 to-purple-500" onclick="ParticleSystem.setShape('saturn', this)" title="Saturn">
-                            <span class="shape-label">S</span>
-                        </button>
-                        <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-green-400 to-blue-500" onclick="ParticleSystem.setShape('cube', this)" title="Cube">
-                            <span class="shape-label">C</span>
-                        </button>
-                        <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-orange-500 to-amber-600" onclick="ParticleSystem.setShape('sphere', this)" title="Sphere">
-                            <span class="shape-label">S</span>
-                        </button>
-                        <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-pink-500 to-rose-500" onclick="ParticleSystem.setShape('vortex', this)" title="Vortex">
-                            <span class="shape-label">V</span>
-                        </button>
-                        <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-yellow-400 to-orange-500" onclick="ParticleSystem.setShape('torus', this)" title="Torus">
-                            <span class="shape-label">T</span>
-                        </button>
-                        <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-indigo-400 to-purple-600" onclick="ParticleSystem.setShape('dna', this)" title="DNA">
-                            <span class="shape-label">D</span>
-                        </button>
-                        <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-cyan-400 to-blue-600" onclick="ParticleSystem.setShape('atom', this)" title="Atom">
-                            <span class="shape-label">A</span>
-                        </button>
-                        <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-amber-300 to-orange-600" onclick="ParticleSystem.setShape('hourglass', this)" title="Hourglass">
-                            <span class="shape-label">H</span>
-                        </button>
+                        <button class="option-btn active w-6 h-6 rounded bg-gradient-to-br from-blue-500 to-purple-500" onclick="setShape('saturn')" title="Saturn"></button>
+                        <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-green-400 to-blue-500" onclick="setShape('cube')" title="Cube"></button>
+                        <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-orange-500 to-amber-600" onclick="setShape('sphere')" title="Sphere"></button>
+                        <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-pink-500 to-rose-500" onclick="setShape('vortex')" title="Vortex"></button>
+                        <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-yellow-400 to-orange-500" onclick="setShape('torus')" title="Torus"></button>
+                        <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-indigo-400 to-purple-600" onclick="setShape('dna')" title="DNA"></button>
+                        <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-cyan-400 to-blue-600" onclick="setShape('atom')" title="Atom"></button>
+                        <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-amber-300 to-orange-600" onclick="setShape('hourglass')" title="Hourglass"></button>
                     </div>
                 </div>
 
@@ -272,837 +197,430 @@
     </div>
 
 <script>
-    // ============================================
-    // CONFIGURATION CONSTANTS
-    // ============================================
+    // --- Config ---
     const CONFIG = {
-        // Performance & Visuals
-        baseParticleCount: 12000,
-        mobileParticleCount: 10000,
-        baseSize: 18,
+        particleCount: 12000, 
+        baseSize: 18, 
+        zoomSensitivity: 3.5,  
+        baseHandSize: 0.2,     
+        fistThreshold: 0.5,    
         
-        // Zoom & Control
-        maxZoom: 12.0,
-        minZoom: 0.2,
-        zoomSensitivity: 3.5,
-        baseHandSize: 0.2,     // Neutral distance for scale=1
-        neutralHandRange: 0.03, // ± range for neutral zone
-        
-        // Gesture Detection
-        fistThreshold: 0.5,
-        fistDebounceFrames: 3, // Require fist for X frames to trigger
-        
-        // Animation
-        lerpSpeed: 0.15,
+        lerpSpeed: 0.15,       // Reverted to 0.15 for faster response
         shapeMorphSpeed: 0.15,
-        scatterLerpSpeed: 0.05,  // Slow cinematic scatter
-        assembleLerpSpeed: 0.4,   // Fast real-time assemble
         
-        // Smoothing
-        historySize: 3,
-        stabilityThreshold: 0.015,
-        rotationSmoothness: 0.1
+        historySize: 3,        // Reduced buffer for less latency
+        stabilityThreshold: 0.015 
     };
 
+    // --- Config & Themes ---
     const THEMES = [
         { name: 'Cosmic', core: '#a855f7', ring: '#3b82f6' },
         { name: 'Aurora', core: '#10b981', ring: '#8b5cf6' },
         { name: 'Plasma', core: '#2563eb', ring: '#7c3aed' }
     ];
+    let currentTheme = THEMES[0];
+    let currentShape = 'saturn';
 
-    // ============================================
-    // TEXTURE CACHE (Performance Fix #1)
-    // ============================================
-    const TextureCache = {
-        _texture: null,
-        
-        get() {
-            if (!this._texture) {
-                const canvas = document.createElement('canvas');
-                canvas.width = 128;
-                canvas.height = 128;
-                const ctx = canvas.getContext('2d');
-                const cx = 64;
-                const cy = 64;
-                
-                const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, 64);
-                gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
-                gradient.addColorStop(0.15, 'rgba(255, 255, 255, 0.9)');
-                gradient.addColorStop(0.4, 'rgba(255, 255, 255, 0.2)');
-                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
-                
-                ctx.fillStyle = gradient;
-                ctx.fillRect(0, 0, 128, 128);
-                ctx.beginPath();
-                ctx.arc(cx, cy, 8, 0, Math.PI * 2);
-                ctx.fillStyle = '#FFFFFF';
-                ctx.fill();
-                
-                this._texture = new THREE.Texture(canvas);
-                this._texture.needsUpdate = true;
-            }
-            return this._texture;
-        },
-        
-        dispose() {
-            if (this._texture) {
-                this._texture.dispose();
-                this._texture = null;
-            }
-        }
+    // --- State ---
+    const state = {
+        targetScale: 1, currentScale: 1,
+        targetScatter: 0, currentScatter: 0,
+        isExploded: false, // LATCH FLAG
+        rotY: 0, rotX: 0.2, targetRotY: 0, targetRotX: 0.2,
+        handDetected: false,
+        xHistory: [], yHistory: [],
+        lastStableX: 0.5, lastStableY: 0.5
     };
 
-    // ============================================
-    // PARTICLE SYSTEM CLASS
-    // ============================================
-    class ParticleSystem {
-        static instance = null;
-        
-        constructor() {
-            if (ParticleSystem.instance) {
-                return ParticleSystem.instance;
-            }
-            ParticleSystem.instance = this;
-            
-            this.currentTheme = THEMES[0];
-            this.currentShape = 'saturn';
-            this.particleCount = this.isMobile() ? CONFIG.mobileParticleCount : CONFIG.baseParticleCount;
-            
-            this.init();
-        }
-        
-        isMobile() {
-            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        }
-        
-        init() {
-            this.container = document.getElementById('canvas-container');
-            this.scene = new THREE.Scene();
-            this.scene.fog = new THREE.FogExp2(0x0a0518, 0.008);
-            
-            this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            this.camera.position.z = 80;
-            this.camera.position.y = 0;
-            this.camera.lookAt(0, 0, 0);
-            
-            this.renderer = new THREE.WebGLRenderer({ 
-                antialias: false, 
-                alpha: true, 
-                powerPreference: "high-performance" 
-            });
-            this.renderer.setSize(window.innerWidth, window.innerHeight);
-            this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit for mobile
-            this.container.appendChild(this.renderer.domElement);
-            
-            this.createStars();
-            this.createParticles();
-            this.clock = new THREE.Clock();
-            
-            // Initialize state
-            this.state = {
-                targetScale: 1,
-                currentScale: 1,
-                targetScatter: 0,
-                currentScatter: 0,
-                isExploded: false,
-                rotY: 0,
-                rotX: 0.2,
-                targetRotY: 0,
-                targetRotX: 0.2,
-                handDetected: false,
-                xHistory: [],
-                yHistory: [],
-                lastStableX: 0.5,
-                lastStableY: 0.5,
-                fistFrameCount: 0
-            };
-            
-            // Update stats display
-            document.getElementById('stats-info').textContent = `Particles: ${this.particleCount.toLocaleString()}`;
-        }
-        
-        createStars() {
-            // First star layer - distant stars
-            const starGeo1 = new THREE.BufferGeometry();
-            const starPos1 = [];
-            const starSizes1 = [];
-            
-            for (let i = 0; i < 2000; i++) {
-                starPos1.push(
-                    (Math.random() - 0.5) * 1200,
-                    (Math.random() - 0.5) * 1200,
-                    (Math.random() - 0.5) * 1200
-                );
-                starSizes1.push(Math.random() * 1.5);
-            }
-            
-            starGeo1.setAttribute('position', new THREE.Float32BufferAttribute(starPos1, 3));
-            starGeo1.setAttribute('size', new THREE.Float32BufferAttribute(starSizes1, 1));
-            
-            const starMat1 = new THREE.PointsMaterial({
-                color: 0xa0a0ff,
-                size: 1.0,
-                map: TextureCache.get(),
-                transparent: true,
-                opacity: 0.6,
-                blending: THREE.AdditiveBlending,
-                depthWrite: false,
-                sizeAttenuation: true
-            });
-            
-            this.scene.add(new THREE.Points(starGeo1, starMat1));
-            
-            // Second star layer - brighter, closer stars
-            const starGeo2 = new THREE.BufferGeometry();
-            const starPos2 = [];
-            const starSizes2 = [];
-            
-            for (let i = 0; i < 800; i++) {
-                starPos2.push(
-                    (Math.random() - 0.5) * 800,
-                    (Math.random() - 0.5) * 800,
-                    (Math.random() - 0.5) * 800
-                );
-                starSizes2.push(0.8 + Math.random() * 2.0);
-            }
-            
-            starGeo2.setAttribute('position', new THREE.Float32BufferAttribute(starPos2, 3));
-            starGeo2.setAttribute('size', new THREE.Float32BufferAttribute(starSizes2, 1));
-            
-            const starMat2 = new THREE.PointsMaterial({
-                color: 0xffffff,
-                size: 1.0,
-                map: TextureCache.get(),
-                transparent: true,
-                opacity: 0.9,
-                blending: THREE.AdditiveBlending,
-                depthWrite: false,
-                sizeAttenuation: true
-            });
-            
-            this.stars2 = new THREE.Points(starGeo2, starMat2);
-            this.scene.add(this.stars2);
-        }
-        
-        createParticles() {
-            this.particlesGeometry = new THREE.BufferGeometry();
-            
-            // Initialize buffers
-            this.currentPositions = new Float32Array(this.particleCount * 3);
-            this.targetPositions = new Float32Array(this.particleCount * 3);
-            this.scatterVectors = new Float32Array(this.particleCount * 3);
-            this.colors = new Float32Array(this.particleCount * 3);
-            this.sizes = new Float32Array(this.particleCount);
-            
-            // Generate initial scatter vectors (random sphere)
-            for (let i = 0; i < this.particleCount; i++) {
-                const u = Math.random();
-                const v = Math.random();
-                const theta = 2 * Math.PI * u;
-                const phi = Math.acos(2 * v - 1);
-                const r = 40 + Math.random() * 60;
-                
-                this.scatterVectors[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-                this.scatterVectors[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-                this.scatterVectors[i * 3 + 2] = r * Math.cos(phi);
-                this.sizes[i] = 0.8 + Math.random() * 1.0;
-            }
-            
-            // Generate initial shape
-            const initData = this.generateShape('saturn');
-            this.targetPositions.set(initData.pos);
-            this.currentPositions.set(initData.pos.slice()); // Copy, not reference
-            this.colors.set(initData.col);
-            
-            // Set geometry attributes
-            this.particlesGeometry.setAttribute('position', 
-                new THREE.BufferAttribute(this.currentPositions, 3));
-            this.particlesGeometry.setAttribute('color', 
-                new THREE.BufferAttribute(this.colors, 3));
-            this.particlesGeometry.setAttribute('size', 
-                new THREE.BufferAttribute(this.sizes, 1));
-            
-            // Create material
-            this.particlesMaterial = new THREE.PointsMaterial({
-                size: 1.2,
-                map: TextureCache.get(),
-                vertexColors: true,
-                transparent: true,
-                opacity: 0.9,
-                blending: THREE.NormalBlending,
-                depthWrite: false,
-                sizeAttenuation: true
-            });
-            
-            this.particleSystem = new THREE.Points(this.particlesGeometry, this.particlesMaterial);
-            this.scene.add(this.particleSystem);
-        }
-        
-        generateShape(type) {
-            const newPos = new Float32Array(this.particleCount * 3);
-            const newCol = new Float32Array(this.particleCount * 3);
-            const c1 = new THREE.Color(this.currentTheme.core);
-            const c2 = new THREE.Color(this.currentTheme.ring);
-            
-            // Constants for shape generation
-            const BASE_SIZE = CONFIG.baseSize;
-            
-            for (let i = 0; i < this.particleCount; i++) {
-                let x, y, z, r, g, b;
-                const ix = i * 3;
-                
-                switch (type) {
-                    case 'saturn':
-                        if (i < this.particleCount * 0.4) {
-                            const phi = Math.acos(-1 + (2 * i) / (this.particleCount * 0.4));
-                            const theta = Math.sqrt((this.particleCount * 0.4) * Math.PI) * phi;
-                            const rad = BASE_SIZE + (Math.random() - 0.5);
-                            x = rad * Math.cos(theta) * Math.sin(phi);
-                            y = rad * Math.sin(theta) * Math.sin(phi);
-                            z = rad * Math.cos(phi);
-                            r = c1.r; g = c1.g; b = c1.b;
-                        } else {
-                            const rad = THREE.MathUtils.randFloat(26, 52);
-                            const theta = Math.random() * Math.PI * 2;
-                            x = rad * Math.cos(theta);
-                            z = rad * Math.sin(theta);
-                            y = (Math.random() - 0.5) * 0.5;
-                            const mix = (rad - 26) / (52 - 26);
-                            const c = new THREE.Color().lerpColors(c1, c2, mix);
-                            r = c.r; g = c.g; b = c.b;
-                        }
-                        break;
-                        
-                    case 'cube':
-                        const side = BASE_SIZE * 1.5;
-                        const face = Math.floor(Math.random() * 6);
-                        const u = (Math.random() - 0.5) * 2 * side;
-                        const v = (Math.random() - 0.5) * 2 * side;
-                        
-                        if (face === 0) { x = side; y = u; z = v; }
-                        else if (face === 1) { x = -side; y = u; z = v; }
-                        else if (face === 2) { x = u; y = side; z = v; }
-                        else if (face === 3) { x = u; y = -side; z = v; }
-                        else if (face === 4) { x = u; y = v; z = side; }
-                        else { x = u; y = v; z = -side; }
-                        
-                        x += (Math.random() - 0.5);
-                        y += (Math.random() - 0.5);
-                        z += (Math.random() - 0.5);
-                        
-                        const mix = Math.min((Math.abs(u) + Math.abs(v)) / (side * 2), 1);
-                        const cubeColor = new THREE.Color().lerpColors(c1, c2, mix);
-                        r = cubeColor.r; g = cubeColor.g; b = cubeColor.b;
-                        break;
-                        
-                    // ... (other shape cases remain similar but cleaned up)
-                    // For brevity, I'll show one more example and you can keep the rest
-                    
-                    case 'sphere':
-                        const phi = Math.acos(-1 + (2 * i) / this.particleCount);
-                        const theta = Math.sqrt(this.particleCount * Math.PI) * phi;
-                        const rad = BASE_SIZE * 1.5;
-                        
-                        x = rad * Math.cos(theta) * Math.sin(phi);
-                        y = rad * Math.sin(theta) * Math.sin(phi);
-                        z = rad * Math.cos(phi);
-                        
-                        const sphereColor = new THREE.Color().lerpColors(c1, c2, Math.abs(y / rad));
-                        r = sphereColor.r; g = sphereColor.g; b = sphereColor.b;
-                        break;
-                        
-                    default:
-                        // Default to sphere if shape not found
-                        const defaultRad = BASE_SIZE;
-                        x = (Math.random() - 0.5) * defaultRad * 2;
-                        y = (Math.random() - 0.5) * defaultRad * 2;
-                        z = (Math.random() - 0.5) * defaultRad * 2;
-                        r = c1.r; g = c1.g; b = c1.b;
+    // --- Texture ---
+    function getTexture() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 128; canvas.height = 128;
+        const ctx = canvas.getContext('2d');
+        const cx = 64; const cy = 64;
+        const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, 64);
+        gradient.addColorStop(0, 'rgba(255, 255, 255, 1)'); 
+        gradient.addColorStop(0.15, 'rgba(255, 255, 255, 0.9)'); 
+        gradient.addColorStop(0.4, 'rgba(255, 255, 255, 0.2)');
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 128, 128);
+        ctx.beginPath(); ctx.arc(cx, cy, 8, 0, Math.PI * 2); ctx.fillStyle = '#FFFFFF'; ctx.fill();
+        const texture = new THREE.Texture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
+
+    // --- Three.js ---
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x0a0518, 0.008); 
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.z = 80; camera.position.y = 0; camera.lookAt(0, 0, 0);
+    const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, powerPreference: "high-performance" });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    container.appendChild(renderer.domElement);
+
+    // --- Stars & Dust ---
+    const starGeo1 = new THREE.BufferGeometry();
+    const starPos1 = []; const starSizes1 = [];
+    for(let i=0; i<2000; i++) {
+        starPos1.push((Math.random()-0.5)*1200, (Math.random()-0.5)*1200, (Math.random()-0.5)*1200);
+        starSizes1.push(Math.random() * 1.5); 
+    }
+    starGeo1.setAttribute('position', new THREE.Float32BufferAttribute(starPos1, 3));
+    starGeo1.setAttribute('size', new THREE.Float32BufferAttribute(starSizes1, 1));
+    const starMat1 = new THREE.PointsMaterial({
+        color: 0xa0a0ff, size: 1.0, map: getTexture(), transparent: true,
+        opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true
+    });
+    scene.add(new THREE.Points(starGeo1, starMat1));
+
+    const starGeo2 = new THREE.BufferGeometry();
+    const starPos2 = []; const starSizes2 = [];
+    for(let i=0; i<800; i++) {
+        starPos2.push((Math.random()-0.5)*800, (Math.random()-0.5)*800, (Math.random()-0.5)*800);
+        starSizes2.push(0.8 + Math.random() * 2.0); 
+    }
+    starGeo2.setAttribute('position', new THREE.Float32BufferAttribute(starPos2, 3));
+    starGeo2.setAttribute('size', new THREE.Float32BufferAttribute(starSizes2, 1));
+    const starMat2 = new THREE.PointsMaterial({
+        color: 0xffffff, size: 1.0, map: getTexture(), transparent: true,
+        opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true
+    });
+    const stars2 = new THREE.Points(starGeo2, starMat2);
+    scene.add(stars2);
+
+    // --- Particles ---
+    const particlesGeometry = new THREE.BufferGeometry();
+    const currentPositions = new Float32Array(CONFIG.particleCount * 3);
+    const targetPositions = new Float32Array(CONFIG.particleCount * 3);
+    const scatterVectors = new Float32Array(CONFIG.particleCount * 3);
+    const colors = new Float32Array(CONFIG.particleCount * 3);
+    const sizes = new Float32Array(CONFIG.particleCount);
+
+    for(let i=0; i<CONFIG.particleCount; i++) {
+        const u = Math.random(); const v = Math.random();
+        const theta = 2 * Math.PI * u; const phi = Math.acos(2 * v - 1);
+        const r = 40 + Math.random() * 60; 
+        scatterVectors[i*3] = r * Math.sin(phi) * Math.cos(theta);
+        scatterVectors[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+        scatterVectors[i*3+2] = r * Math.cos(phi);
+        sizes[i] = 0.8 + Math.random() * 1.0;
+    }
+
+    function generateShape(type) {
+        const newPos = new Float32Array(CONFIG.particleCount * 3);
+        const newCol = new Float32Array(CONFIG.particleCount * 3);
+        const c1 = new THREE.Color(currentTheme.core);
+        const c2 = new THREE.Color(currentTheme.ring);
+
+        for(let i=0; i<CONFIG.particleCount; i++) {
+            let x, y, z, r, g, b;
+            const ix = i*3;
+            if (type === 'saturn') {
+                if (i < CONFIG.particleCount * 0.4) {
+                    const phi = Math.acos(-1 + (2*i)/(CONFIG.particleCount*0.4));
+                    const theta = Math.sqrt((CONFIG.particleCount*0.4)*Math.PI)*phi;
+                    const rad = CONFIG.baseSize+(Math.random()-0.5);
+                    x = rad*Math.cos(theta)*Math.sin(phi); y = rad*Math.sin(theta)*Math.sin(phi); z = rad*Math.cos(phi);
+                    r=c1.r; g=c1.g; b=c1.b;
+                } else {
+                    const rad = THREE.MathUtils.randFloat(26,52);
+                    const theta = Math.random()*Math.PI*2;
+                    x = rad*Math.cos(theta); z = rad*Math.sin(theta); y = (Math.random()-0.5)*0.5;
+                    const mix = (rad-26)/(52-26); const c = new THREE.Color().lerpColors(c1,c2,mix);
+                    r=c.r; g=c.g; b=c.b;
                 }
-                
-                newPos[ix] = x;
-                newPos[ix + 1] = y;
-                newPos[ix + 2] = z;
-                newCol[ix] = r;
-                newCol[ix + 1] = g;
-                newCol[ix + 2] = b;
+            } else if (type === 'cube') {
+                const side = CONFIG.baseSize * 1.5;
+                const face = Math.floor(Math.random() * 6);
+                const u = (Math.random() - 0.5) * 2 * side;
+                const v = (Math.random() - 0.5) * 2 * side;
+                if(face===0){x=side;y=u;z=v;}else if(face===1){x=-side;y=u;z=v;}else if(face===2){x=u;y=side;z=v;}
+                else if(face===3){x=u;y=-side;z=v;}else if(face===4){x=u;y=v;z=side;}else{x=u;y=v;z=-side;}
+                x+=(Math.random()-0.5); y+=(Math.random()-0.5); z+=(Math.random()-0.5);
+                const mix = Math.min((Math.abs(u)+Math.abs(v))/(side*2), 1);
+                const c = new THREE.Color().lerpColors(c1,c2,mix); r=c.r; g=c.g; b=c.b;
+            } else if (type === 'sphere') {
+                const phi = Math.acos(-1+(2*i)/CONFIG.particleCount);
+                const theta = Math.sqrt(CONFIG.particleCount*Math.PI)*phi;
+                const rad = CONFIG.baseSize*1.5;
+                x=rad*Math.cos(theta)*Math.sin(phi); y=rad*Math.sin(theta)*Math.sin(phi); z=rad*Math.cos(phi);
+                const c=new THREE.Color().lerpColors(c1,c2,Math.abs(y/rad)); r=c.r; g=c.g; b=c.b;
+            } else if (type === 'vortex') {
+                const branchAngle=(i%3)*((2*Math.PI)/3); const rad=Math.random()*50;
+                const angle=branchAngle+rad*0.1;
+                x=Math.cos(angle)*rad; z=Math.sin(angle)*rad; y=(Math.random()-0.5)*(10-rad*0.15);
+                const c=new THREE.Color().lerpColors(c1,c2,rad/50); r=c.r; g=c.g; b=c.b;
+            } else if (type === 'torus') {
+                const u=Math.random()*Math.PI*2; const v=Math.random()*Math.PI*2;
+                x=(30+10*Math.cos(v))*Math.cos(u); z=(30+10*Math.cos(v))*Math.sin(u); y=10*Math.sin(v);
+                const c=new THREE.Color().lerpColors(c1,c2,Math.abs(Math.sin(u*2))); r=c.r; g=c.g; b=c.b;
+            } else if (type === 'dna') {
+                const h=(i/CONFIG.particleCount)*80-40; const angle=h*0.2; const rad=12;
+                const offset=(i%2===0)?0:Math.PI;
+                x=Math.cos(angle+offset)*rad+(Math.random()-0.5)*2; z=Math.sin(angle+offset)*rad+(Math.random()-0.5)*2; y=h;
+                const c=(i%2===0)?c1:c2; r=c.r; g=c.g; b=c.b;
+            } else if (type === 'atom') {
+                if(i<CONFIG.particleCount*0.2) {
+                    const phi = Math.acos(-1+(2*i)/(CONFIG.particleCount*0.2));
+                    const theta = Math.sqrt((CONFIG.particleCount*0.2)*Math.PI)*phi;
+                    const rad = CONFIG.baseSize*0.4+(Math.random()-0.5);
+                    x=rad*Math.cos(theta)*Math.sin(phi); y=rad*Math.sin(theta)*Math.sin(phi); z=rad*Math.cos(phi);
+                    r=c1.r; g=c1.g; b=c1.b;
+                } else {
+                    const ringPart=(i-CONFIG.particleCount*0.2); const ringTotal=CONFIG.particleCount*0.8;
+                    const ringIndex=Math.floor(ringPart/(ringTotal/3)); const rad=CONFIG.baseSize*3.0;
+                    const theta=Math.random()*Math.PI*2; const rt=(Math.random()-0.5)*1.5;
+                    if(ringIndex===0){x=rad*Math.cos(theta);y=rad*Math.sin(theta);z=rt;const rot=Math.PI/3;const yn=y*Math.cos(rot)-z*Math.sin(rot);const zn=y*Math.sin(rot)+z*Math.cos(rot);y=yn;z=zn;}
+                    else if(ringIndex===1){x=rad*Math.cos(theta);y=rad*Math.sin(theta);z=rt;const rot=-Math.PI/3;const yn=y*Math.cos(rot)-z*Math.sin(rot);const zn=y*Math.sin(rot)+z*Math.cos(rot);y=yn;z=zn;}
+                    else{x=rad*Math.cos(theta);z=rad*Math.sin(theta);y=rt;}
+                    const c=new THREE.Color().lerpColors(c1,c2,Math.random()*0.5+0.5); r=c.r; g=c.g; b=c.b;
+                }
+            } else if (type === 'hourglass') {
+                const half=CONFIG.particleCount/2; const h=CONFIG.baseSize*3; const w=CONFIG.baseSize*2.5; let nh,rad;
+                if(i<half){nh=i/half;y=nh*h+1;rad=nh*w;}else{nh=(i-half)/half;y=-nh*h-1;rad=nh*w;}
+                rad=Math.pow(rad/w,1.5)*w; const theta=Math.random()*Math.PI*2;
+                x=rad*Math.cos(theta); z=rad*Math.sin(theta);
+                if(Math.random()>0.97){x=(Math.random()-0.5)*2;z=(Math.random()-0.5)*2;y=(Math.random()-0.5)*h*2;}
+                const c=new THREE.Color().lerpColors(c1,c2,rad/w); r=c.r; g=c.g; b=c.b;
             }
-            
-            return { pos: newPos, col: newCol };
+            newPos[ix]=x; newPos[ix+1]=y; newPos[ix+2]=z; newCol[ix]=r; newCol[ix+1]=g; newCol[ix+2]=b;
         }
-        
-        static setShape(shape, element) {
-            const instance = ParticleSystem.instance;
-            instance.currentShape = shape;
-            
-            // Update UI
-            document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('active'));
-            element.classList.add('active');
-            
-            // Update shape data
-            const data = instance.generateShape(shape);
-            for (let i = 0; i < data.pos.length; i++) {
-                instance.targetPositions[i] = data.pos[i];
-                instance.colors[i] = data.col[i];
-            }
-            instance.particlesGeometry.attributes.color.needsUpdate = true;
+        return { pos: newPos, col: newCol };
+    }
+
+    const initData = generateShape('saturn');
+    targetPositions.set(initData.pos); currentPositions.set(initData.pos); colors.set(initData.col);
+    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(currentPositions, 3));
+    particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    particlesGeometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+    const particlesMaterial = new THREE.PointsMaterial({ size: 1.2, map: getTexture(), vertexColors: true, transparent: true, opacity: 0.9, blending: THREE.NormalBlending, depthWrite: false, sizeAttenuation: true });
+    const particleSystem = new THREE.Points(particlesGeometry, particlesMaterial);
+    scene.add(particleSystem);
+
+    const themeContainer = document.getElementById('theme-container');
+    const zoomVal = document.getElementById('zoom-val');
+    const trackDot = document.getElementById('track-dot');
+    const scatterText = document.getElementById('scatter-text');
+
+    THEMES.forEach((theme, index) => {
+        const btn = document.createElement('div');
+        btn.className = `w-6 h-6 rounded-full cursor-pointer border-2 border-white/20 transition-all ${index === 0 ? 'scale-110 border-white shadow-lg' : ''}`;
+        btn.style.background = `linear-gradient(135deg, ${theme.core} 0%, ${theme.ring} 100%)`;
+        btn.onclick = () => {
+            currentTheme = theme;
+            document.querySelectorAll('#theme-container div').forEach(b => b.classList.remove('scale-110', 'border-white', 'shadow-lg'));
+            btn.classList.add('scale-110', 'border-white', 'shadow-lg');
+            updateShapeData(); 
+        };
+        themeContainer.appendChild(btn);
+    });
+
+    window.setShape = (shape) => {
+        currentShape = shape;
+        document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('active'));
+        event.currentTarget.classList.add('active');
+        updateShapeData();
+    };
+
+    function updateShapeData() {
+        const data = generateShape(currentShape);
+        for(let i=0; i<data.pos.length; i++) {
+            targetPositions[i] = data.pos[i];
+            colors[i] = data.col[i]; 
         }
-        
-        setTheme(theme) {
-            this.currentTheme = theme;
-            this.updateShapeData();
+        particlesGeometry.attributes.color.needsUpdate = true;
+    }
+
+    const videoElement = document.getElementsByClassName('input_video')[0];
+    const canvasElement = document.getElementsByClassName('output_canvas')[0];
+    const canvasCtx = canvasElement.getContext('2d');
+    const loader = document.getElementById('loading-spinner');
+    const startBtn = document.getElementById('start-btn');
+    const startOverlay = document.getElementById('start-overlay');
+
+    function getWeightedAverage(history) {
+        if(history.length === 0) return 0.5;
+        let sum = 0, weightSum = 0;
+        for(let i=0; i<history.length; i++) {
+            const w = i + 1;
+            sum += history[i] * w;
+            weightSum += w;
         }
-        
-        updateShapeData() {
-            const data = this.generateShape(this.currentShape);
-            for (let i = 0; i < data.pos.length; i++) {
-                this.targetPositions[i] = data.pos[i];
-                this.colors[i] = data.col[i];
-            }
-            this.particlesGeometry.attributes.color.needsUpdate = true;
+        return sum / weightSum;
+    }
+
+    function onResults(results) {
+        if (loader.style.display !== 'none') {
+            loader.style.display = 'none';
+            document.getElementById('status-text').textContent = "Connected";
+            document.getElementById('status-indicator').classList.replace('bg-yellow-400', 'bg-green-400');
         }
+        canvasElement.width = results.image.width; canvasElement.height = results.image.height;
+        canvasCtx.save(); canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+        canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
         
-        getWeightedAverage(history) {
-            if (history.length === 0) return 0.5;
-            let sum = 0, weightSum = 0;
-            for (let i = 0; i < history.length; i++) {
-                const w = i + 1;
-                sum += history[i] * w;
-                weightSum += w;
-            }
-            return sum / weightSum;
-        }
-        
-        updateFromHandData(landmarks) {
-            if (!landmarks) return;
-            
-            const wrist = landmarks[0];
-            const midMCP = landmarks[9];
-            
-            // Calculate hand size for zoom
+        if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+            const landmarks = results.multiHandLandmarks[0];
+            state.handDetected = true;
+            trackDot.classList.replace('bg-red-500', 'bg-green-500');
+            drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: 'rgba(168, 85, 247, 0.5)', lineWidth: 2});
+            drawLandmarks(canvasCtx, landmarks, {color: '#FFFFFF', lineWidth: 1, radius: 2});
+
+            const wrist = landmarks[0]; const midMCP = landmarks[9];
             const handSize = Math.hypot(wrist.x - midMCP.x, wrist.y - midMCP.y);
-            
-            // NEW ZOOM LOGIC: Center around neutral point
-            const neutralSize = CONFIG.baseHandSize;
-            const normalizedSize = (handSize - neutralSize) / neutralSize;
-            
-            // Create neutral zone where scale stays at 1
-            let zoom;
-            if (Math.abs(normalizedSize) < CONFIG.neutralHandRange) {
-                zoom = 1.0; // Neutral zone
-            } else if (normalizedSize > 0) {
-                // Hand is farther than neutral - zoom out
-                zoom = 1.0 - (normalizedSize - CONFIG.neutralHandRange) * CONFIG.zoomSensitivity;
-            } else {
-                // Hand is closer than neutral - zoom in
-                zoom = 1.0 + (Math.abs(normalizedSize) - CONFIG.neutralHandRange) * CONFIG.zoomSensitivity * 0.5;
-            }
-            
-            zoom = Math.max(CONFIG.minZoom, Math.min(zoom, CONFIG.maxZoom));
-            this.state.targetScale = zoom;
-            
-            // Update zoom display
-            document.getElementById('zoom-val').textContent = Math.round(zoom * 100) + "%";
-            
-            // Gesture detection for scatter/assemble
-            const thumbTip = landmarks[4];
-            const indexTip = landmarks[8];
+            let zoom = handSize / CONFIG.baseHandSize;
+            zoom = Math.max(0.2, Math.min(zoom, 8.0)); 
+            state.targetScale = zoom;
+            zoomVal.textContent = Math.round(zoom * 100) + "%";
+
+            const thumbTip = landmarks[4]; const indexTip = landmarks[8];
             const pinchDist = Math.hypot(thumbTip.x - indexTip.x, thumbTip.y - indexTip.y);
-            const openness = pinchDist / handSize;
+            const openness = pinchDist / handSize; 
             
-            // NEW SCATTER/ASSEMBLE LOGIC
+            // --- LOGIC CORRECTION ---
             if (openness < CONFIG.fistThreshold) {
-                // Fist detected - increment counter
-                this.state.fistFrameCount++;
-                
-                // Only trigger scatter after holding fist for required frames
-                if (this.state.fistFrameCount >= CONFIG.fistDebounceFrames && !this.state.isExploded) {
-                    this.state.isExploded = true;
-                    this.state.targetScatter = 1.0;
-                    document.getElementById('scatter-text').style.opacity = 1;
-                }
+                // Fist detected: Trigger automatic scatter
+                state.isExploded = true;
+                state.targetScatter = 1.0; 
+                if(scatterText) scatterText.style.opacity = 1;
             } else {
-                // Not a fist - reset fist counter
-                this.state.fistFrameCount = 0;
-                
-                if (this.state.isExploded) {
-                    // Control reassembly with hand opening (real-time)
-                    const range = 0.6;
+                // Not a fist. 
+                if (state.isExploded) {
+                    // IF exploded previously, now control re-assembly via hand opening (Real-time)
+                    const range = 0.6; // 1.1 - 0.5
                     let val = (openness - CONFIG.fistThreshold) / range;
                     val = Math.max(0, Math.min(1, val));
                     
-                    // As hand opens (val 0→1), scatter goes 1→0
-                    this.state.targetScatter = 1.0 - val;
+                    // As hand opens (val goes 0->1), scatter goes 1->0
+                    state.targetScatter = 1.0 - val; 
                     
-                    // Reset if fully assembled
-                    if (this.state.targetScatter < 0.05) {
-                        this.state.isExploded = false;
-                        this.state.targetScatter = 0.0;
-                        document.getElementById('scatter-text').style.opacity = 0;
+                    // Reset latch if fully assembled
+                    if (state.targetScatter < 0.05) {
+                        state.isExploded = false;
+                        state.targetScatter = 0.0;
                     }
                 } else {
-                    // Not exploded - force solid shape
-                    this.state.targetScatter = 0.0;
-                    document.getElementById('scatter-text').style.opacity = 0;
+                    // Not exploded, not a fist: Force solid. Ignore closing motion.
+                    state.targetScatter = 0.0;
+                    if(scatterText) scatterText.style.opacity = 0;
                 }
             }
+
+            // Smoothing with stability check
+            state.xHistory.push(landmarks[9].x);
+            state.yHistory.push(landmarks[9].y);
+            if(state.xHistory.length > CONFIG.historySize) state.xHistory.shift();
+            if(state.yHistory.length > CONFIG.historySize) state.yHistory.shift();
+
+            const smoothedX = getWeightedAverage(state.xHistory);
+            const smoothedY = getWeightedAverage(state.yHistory);
+
+            const deltaX = Math.abs(smoothedX - state.lastStableX);
+            const deltaY = Math.abs(smoothedY - state.lastStableY);
             
-            // Smooth hand position for rotation
-            this.state.xHistory.push(midMCP.x);
-            this.state.yHistory.push(midMCP.y);
-            
-            if (this.state.xHistory.length > CONFIG.historySize) this.state.xHistory.shift();
-            if (this.state.yHistory.length > CONFIG.historySize) this.state.yHistory.shift();
-            
-            const smoothedX = this.getWeightedAverage(this.state.xHistory);
-            const smoothedY = this.getWeightedAverage(this.state.yHistory);
-            
-            // Stability check
-            const deltaX = Math.abs(smoothedX - this.state.lastStableX);
-            const deltaY = Math.abs(smoothedY - this.state.lastStableY);
-            
+            let stableX = state.lastStableX;
+            let stableY = state.lastStableY;
+
             if (deltaX > CONFIG.stabilityThreshold) {
-                this.state.lastStableX = smoothedX;
+                state.lastStableX = smoothedX;
+                stableX = smoothedX;
             }
             if (deltaY > CONFIG.stabilityThreshold) {
-                this.state.lastStableY = smoothedY;
+                state.lastStableY = smoothedY;
+                stableY = smoothedY;
             }
-            
-            // Update target rotation with smoothing
-            const x = this.state.lastStableX;
-            const y = this.state.lastStableY;
-            
-            this.state.targetRotY += (0.5 - x) * 4.0 - this.state.targetRotY * CONFIG.rotationSmoothness;
-            this.state.targetRotX += (0.5 - y) * 4.0 - this.state.targetRotX * CONFIG.rotationSmoothness;
+
+            const x = stableX; 
+            const y = stableY;
+            state.targetRotY = (0.5 - x) * 4.0;
+            state.targetRotX = (0.5 - y) * 4.0;
+        } else {
+            state.handDetected = false;
+            trackDot.classList.replace('bg-green-500', 'bg-red-500');
+            state.isExploded = false; // Reset on hand loss
+            state.targetScatter = 0; state.targetScale = 1; 
+            if(scatterText) scatterText.style.opacity = 0;
+            state.targetRotY += 0.002; state.targetRotX = state.rotX * 0.9 + 0.2 * 0.1;
+            state.xHistory = []; state.yHistory = [];
         }
-        
-        updateNoHand() {
-            this.state.handDetected = false;
-            this.state.fistFrameCount = 0;
-            this.state.isExploded = false;
-            this.state.targetScatter = 0;
-            this.state.targetScale = 1;
-            this.state.targetRotY += 0.002;
-            this.state.targetRotX = this.state.rotX * 0.9 + 0.2 * 0.1;
-            this.state.xHistory = [];
-            this.state.yHistory = [];
-            
-            document.getElementById('scatter-text').style.opacity = 0;
-            document.getElementById('track-dot').classList.replace('bg-green-500', 'bg-red-500');
-        }
-        
-        animate() {
-            requestAnimationFrame(() => this.animate());
-            const time = this.clock.getElapsedTime();
-            
-            // Smooth scale interpolation
-            this.state.currentScale += (this.state.targetScale - this.state.currentScale) * CONFIG.lerpSpeed;
-            
-            // Scatter animation with different speeds
-            if (this.state.isExploded && this.state.targetScatter > 0.9) {
-                // Slow cinematic scatter (once triggered)
-                this.state.currentScatter += (this.state.targetScatter - this.state.currentScatter) * CONFIG.scatterLerpSpeed;
-            } else {
-                // Fast real-time reassembly
-                this.state.currentScatter += (this.state.targetScatter - this.state.currentScatter) * CONFIG.assembleLerpSpeed;
-            }
-            
-            // Smooth rotation
-            if (this.state.handDetected) {
-                this.state.rotY += (this.state.targetRotY - this.state.rotY) * CONFIG.lerpSpeed;
-                this.state.rotX += (this.state.targetRotX - this.state.rotX) * CONFIG.lerpSpeed;
-            } else {
-                this.state.rotY += 0.002;
-                this.state.rotX += (this.state.targetRotX - this.state.rotX) * 0.05;
-            }
-            
-            // Apply transformations
-            this.particleSystem.rotation.y = this.state.rotY;
-            this.particleSystem.rotation.x = this.state.rotX;
-            this.particleSystem.scale.set(this.state.currentScale, this.state.currentScale, this.state.currentScale);
-            
-            // Dynamic particle size based on zoom
-            this.particlesMaterial.size = 1.2 + Math.log(Math.max(1, this.state.currentScale)) * 0.5;
-            
-            // Animate background stars
-            this.stars2.rotation.y = time * 0.02;
-            
-            // Update particle positions
-            const posAttr = this.particlesGeometry.attributes.position;
-            
-            for (let i = 0; i < this.particleCount; i++) {
-                const ix = i * 3;
-                const iy = i * 3 + 1;
-                const iz = i * 3 + 2;
-                
-                // Morph towards target shape
-                let cx = this.currentPositions[ix];
-                let cy = this.currentPositions[iy];
-                let cz = this.currentPositions[iz];
-                
-                const tx = this.targetPositions[ix];
-                const ty = this.targetPositions[iy];
-                const tz = this.targetPositions[iz];
-                
-                cx += (tx - cx) * CONFIG.shapeMorphSpeed;
-                cy += (ty - cy) * CONFIG.shapeMorphSpeed;
-                cz += (tz - cz) * CONFIG.shapeMorphSpeed;
-                
-                this.currentPositions[ix] = cx;
-                this.currentPositions[iy] = cy;
-                this.currentPositions[iz] = cz;
-                
-                // Apply scatter
-                const sx = this.scatterVectors[ix];
-                const sy = this.scatterVectors[iy];
-                const sz = this.scatterVectors[iz];
-                
-                const fx = cx + (sx - cx) * this.state.currentScatter;
-                const fy = cy + (sy - cy) * this.state.currentScatter;
-                const fz = cz + (sz - cz) * this.state.currentScatter;
-                
-                // Subtle noise for assembled state
-                let noise = 0;
-                if (this.state.currentScatter < 0.1) {
-                    noise = Math.sin(time * 2 + i) * 0.05;
-                }
-                
-                posAttr.setXYZ(i, fx + noise, fy + noise, fz + noise);
-            }
-            
-            posAttr.needsUpdate = true;
-            this.renderer.render(this.scene, this.camera);
-        }
-        
-        resize() {
-            this.camera.aspect = window.innerWidth / window.innerHeight;
-            this.camera.updateProjectionMatrix();
-            this.renderer.setSize(window.innerWidth, window.innerHeight);
-        }
-        
-        dispose() {
-            // Clean up Three.js resources
-            this.scene.traverse(object => {
-                if (object.geometry) object.geometry.dispose();
-                if (object.material) {
-                    if (Array.isArray(object.material)) {
-                        object.material.forEach(m => m.dispose());
-                    } else {
-                        object.material.dispose();
-                    }
-                }
-            });
-            
-            this.renderer.dispose();
-            TextureCache.dispose();
-        }
+        canvasCtx.restore();
     }
 
-    // ============================================
-    // HAND TRACKER CLASS
-    // ============================================
-    class HandTracker {
-        constructor() {
-            this.videoElement = document.querySelector('.input_video');
-            this.canvasElement = document.querySelector('.output_canvas');
-            this.canvasCtx = this.canvasElement.getContext('2d');
-            this.loader = document.getElementById('loading-spinner');
-            this.startBtn = document.getElementById('start-btn');
-            this.startOverlay = document.getElementById('start-overlay');
-            this.errorOverlay = document.getElementById('error-overlay');
-            this.retryBtn = document.getElementById('retry-btn');
-            this.trackDot = document.getElementById('track-dot');
-            this.connectionDot = document.getElementById('connection-dot');
-            this.statusText = document.getElementById('status-text');
-            
-            this.particleSystem = null;
-            this.hands = null;
-            this.cameraUtils = null;
-            this.isRunning = false;
-            
-            this.init();
-        }
-        
-        init() {
-            // Initialize particle system
-            this.particleSystem = new ParticleSystem();
-            
-            // Initialize themes UI
-            this.initThemes();
-            
-            // Set up event listeners
-            this.startBtn.addEventListener('click', () => this.start());
-            this.retryBtn.addEventListener('click', () => this.start());
-            
-            // Set up MediaPipe Hands
-            this.hands = new Hands({
-                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
-            });
-            
-            this.hands.setOptions({
-                maxNumHands: 1,
-                modelComplexity: 1,
-                minDetectionConfidence: 0.5,
-                minTrackingConfidence: 0.5
-            });
-            
-            this.hands.onResults((results) => this.onResults(results));
-            
-            // Start animation loop
-            this.particleSystem.animate();
-            
-            // Set up window resize handler
-            window.addEventListener('resize', () => this.particleSystem.resize());
-            
-            // Set up beforeunload for cleanup
-            window.addEventListener('beforeunload', () => this.cleanup());
-        }
-        
-        initThemes() {
-            const themeContainer = document.getElementById('theme-container');
-            
-            THEMES.forEach((theme, index) => {
-                const btn = document.createElement('div');
-                btn.className = `w-6 h-6 rounded-full cursor-pointer border-2 border-white/20 transition-all ${index === 0 ? 'scale-110 border-white shadow-lg' : ''}`;
-                btn.style.background = `linear-gradient(135deg, ${theme.core} 0%, ${theme.ring} 100%)`;
-                btn.title = theme.name;
-                
-                btn.addEventListener('click', () => {
-                    this.particleSystem.setTheme(theme);
-                    document.querySelectorAll('#theme-container div').forEach(b => 
-                        b.classList.remove('scale-110', 'border-white', 'shadow-lg')
-                    );
-                    btn.classList.add('scale-110', 'border-white', 'shadow-lg');
-                });
-                
-                themeContainer.appendChild(btn);
-            });
-        }
-        
-        async start() {
-            this.startOverlay.style.display = 'none';
-            this.loader.style.display = 'flex';
-            this.errorOverlay.style.display = 'none';
-            
-            this.updateStatus('connecting', 'Connecting...');
-            
-            try {
-                // Test camera access first
-                const testStream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: 'user', width: 320, height: 240 } 
-                });
-                
-                // Stop test stream
-                testStream.getTracks().forEach(track => track.stop());
-                
-                // Start camera with MediaPipe
-                this.cameraUtils = new Camera(this.videoElement, {
-                    onFrame: async () => {
-                        await this.hands.send({ image: this.videoElement });
-                    },
-                    width: 320,
-                    height: 240
-                });
-                
-                await this.cameraUtils.start();
-                this.isRunning = true;
-                
-                this.updateStatus('connected', 'Connected');
-                
-            } catch (error) {
-                console.error('Camera error:', error);
-                this.loader.style.display = 'none';
-                this.errorOverlay.style.display = 'flex';
-                this.updateStatus('disconnected', 'Camera Error');
-            }
-        }
-        
-        onResults(results) {
-            if (this.loader.style.display !== 'none') {
-                this.loader.style.display = 'none';
-                this.updateStatus('connected', 'Connected');
-            }
-            
-            // Setup canvas
-            this.canvasElement.width = results.image.width;
-            this.canvasElement.height = results.image.height;
-            
-            this.canvasCtx.save();
-            this.canvasCtx.clearRect(0, 0, this.canvasElement.width, this.canvasElement.height);
-            this.canvasCtx.drawImage(results.image, 0, 0, this.canvasElement.width, this.canvasElement.height);
-            
-            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-                const landmarks = results.multiHandLandmarks[0];
-                
-                // Update particle system with hand data
-                this.particleSystem.state.handDetected = true;
-                this.particleSystem.updateFromHandData(landmarks);
-                
-                // Update UI
-                this.trackDot.classList.replace('bg-red-500', 'bg-green-500');
-                
-                // Draw hand landmarks
-                drawConnectors(this.canvasCtx, landmarks, HAND_CONNECTIONS, {
-                    color: 'rgba(168, 85, 247, 0.5)',
-                    lineWidth: 2
-                });
-                
-                drawLandmarks(this.canvasCtx, landmarks, {
-                    color: '#FFFFFF',
-                    lineWidth: 1,
-                    radius: 2
-                });
-                
-            } else {
-                // No hand detected
-                this.particleSystem.updateNoHand();
-                this.trackDot.classList.replace('bg-green-500', 'bg-red-500');
-            }
-            
-            this.canvasCtx.restore();
-        }
-        
-        updateStatus(state, text) {
-            this.connectionDot.className = 'connection-dot ' + state;
-            this.statusText.textContent = text;
-            
-            // Update status indicator colors
-            const indicator = document.getElementById('status-indicator');
-            if (indicator) {
-                indicator.className = `w-1.5 h-1.5 rounded-full mr-2 ${
-                    state === 'connected' ? 'bg-green-400' :
-                    state === 'connecting' ? 'bg-yellow-400 animate-pulse' :
-                    'bg-red-400'
-                }`;
-            }
-        }
-        
-        cleanup() {
-            if (this.cameraUtils && this.isRunning) {
-                this.cameraUtils.stop();
-            }
-            
-            if (this.particleSystem) {
-                this.particleSystem.dispose();
-            }
-            
-            this.isRunning = false;
-        }
-    }
+    const hands = new Hands({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`});
+    hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+    hands.onResults(onResults);
 
-    // ============================================
-    // INITIALIZATION
-    // ============================================
-    document.addEventListener('DOMContentLoaded', () => {
-        // Initialize hand tracker (which will initialize particle system)
-        window.handTracker = new HandTracker();
-        
-        // Add cleanup on page unload
-        window.addEventListener('beforeunload', () => {
-            if (window.handTracker) {
-                window.handTracker.cleanup();
-            }
+    const cameraUtils = new Camera(videoElement, {
+        onFrame: async () => { await hands.send({image: videoElement}); },
+        width: 320, height: 240
+    });
+    
+    startBtn.onclick = () => {
+        startOverlay.style.display = 'none';
+        loader.style.display = 'flex';
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } }).then(s => {
+            s.getTracks().forEach(t=>t.stop());
+            cameraUtils.start();
         });
+    };
+
+    const clock = new THREE.Clock();
+
+    function animate() {
+        requestAnimationFrame(animate);
+        const time = clock.getElapsedTime();
+
+        state.currentScale += (state.targetScale - state.currentScale) * CONFIG.lerpSpeed;
+        
+        // MIXED SCATTER ANIMATION
+        if (state.isExploded && state.targetScatter > 0.9) {
+            // Initial Explosion: Slower cinematic movement
+            state.currentScatter += (state.targetScatter - state.currentScatter) * 0.05;
+        } else {
+            // Reassembling (Controlled by hand): Fast Real-Time response
+            state.currentScatter += (state.targetScatter - state.currentScatter) * 0.4;
+        }
+        
+        if (state.handDetected) {
+            state.rotY += (state.targetRotY - state.rotY) * CONFIG.lerpSpeed;
+            state.rotX += (state.targetRotX - state.rotX) * CONFIG.lerpSpeed;
+        } else {
+            state.rotY += 0.002;
+            state.rotX += (state.targetRotX - state.rotX) * 0.05;
+        }
+
+        particleSystem.rotation.y = state.rotY;
+        particleSystem.rotation.x = state.rotX;
+        particleSystem.scale.set(state.currentScale, state.currentScale, state.currentScale);
+        particlesMaterial.size = 1.2 + Math.log(Math.max(1, state.currentScale)) * 0.5;
+        stars2.rotation.y = time * 0.02;
+
+        const posAttr = particlesGeometry.attributes.position;
+        for(let i=0; i<CONFIG.particleCount; i++) {
+            const ix = i*3; const iy = i*3+1; const iz = i*3+2;
+            let cx = currentPositions[ix]; let cy = currentPositions[iy]; let cz = currentPositions[iz];
+            const tx = targetPositions[ix]; const ty = targetPositions[iy]; const tz = targetPositions[iz];
+            cx += (tx - cx) * CONFIG.shapeMorphSpeed; cy += (ty - cy) * CONFIG.shapeMorphSpeed; cz += (tz - cz) * CONFIG.shapeMorphSpeed;
+            currentPositions[ix] = cx; currentPositions[iy] = cy; currentPositions[iz] = cz;
+
+            const sx = scatterVectors[ix]; const sy = scatterVectors[iy]; const sz = scatterVectors[iz];
+            const fx = cx + (sx - cx) * state.currentScatter; const fy = cy + (sy - cy) * state.currentScatter; const fz = cz + (sz - cz) * state.currentScatter;
+            let noise = 0; if (state.currentScatter < 0.1) { noise = Math.sin(time * 2 + i) * 0.05; }
+            posAttr.setXYZ(i, fx + noise, fy + noise, fz + noise);
+        }
+        posAttr.needsUpdate = true;
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
     });
 </script>
 </body>
