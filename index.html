@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Gesture Controlled Saturn Particles</title>
     
     <!-- Tailwind CSS -->
@@ -18,15 +18,24 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 
     <style>
-        body { margin: 0; overflow: hidden; background-color: #050505; font-family: 'Inter', sans-serif; }
+        /* Prevent pull-to-refresh and scrolling on mobile */
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background-color: #050505; 
+            font-family: 'Inter', sans-serif;
+            touch-action: none; 
+            -webkit-user-select: none;
+            user-select: none;
+        }
         
         /* Glassmorphism UI */
         .glass-panel {
-            background: rgba(20, 20, 30, 0.6);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+            background: rgba(20, 20, 30, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
         }
 
         #canvas-container {
@@ -45,18 +54,14 @@
             width: 100%;
             height: 100%;
             z-index: 10;
-            pointer-events: none; /* Let clicks pass through to canvas if needed */
+            pointer-events: none;
         }
 
         .interactive-element {
             pointer-events: auto;
         }
 
-        /* FIX FOR MOBILE: 
-           Do not use display: none for video elements on mobile.
-           Use opacity: 0 and absolute positioning instead.
-           Browsers pause hidden videos to save battery.
-        */
+        /* Mobile Camera Handling */
         .input_video { 
             position: absolute;
             top: 0;
@@ -67,17 +72,32 @@
             pointer-events: none;
             z-index: -1;
         }
+
+        /* Mirror the canvas for selfie-mode feel */
+        .mirrored-output {
+            transform: scaleX(-1);
+        }
         
         .loader {
             border: 3px solid rgba(255,255,255,0.1);
             border-radius: 50%;
-            border-top: 3px solid #3b82f6;
+            border-top: 3px solid #60a5fa;
             width: 24px;
             height: 24px;
             animation: spin 1s linear infinite;
         }
         
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Pulse animation for start button */
+        @keyframes scanner {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+        .btn-pulse {
+            animation: scanner 2s infinite;
+        }
     </style>
 </head>
 <body>
@@ -86,89 +106,86 @@
     <div id="canvas-container"></div>
 
     <!-- UI Overlay -->
-    <div id="ui-layer" class="flex flex-col justify-between p-6">
+    <div id="ui-layer" class="flex flex-col justify-between p-4 md:p-6 safe-area-inset">
         
-        <!-- Header / Status -->
-        <div class="flex justify-between items-start">
-            <div class="glass-panel rounded-xl p-4 text-white max-w-sm interactive-element transition-all hover:bg-opacity-70">
-                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
-                    Aether Saturn
-                </h1>
-                <p class="text-xs text-gray-300 mt-1">Real-time Gesture Particle System</p>
+        <!-- Top Section -->
+        <div class="flex flex-col md:flex-row justify-between items-start gap-4">
+            
+            <!-- Title Card -->
+            <div class="glass-panel rounded-2xl p-4 text-white w-full md:w-auto md:max-w-xs interactive-element transition-all">
+                <div class="flex justify-between items-center mb-2">
+                    <h1 class="text-lg md:text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-300 to-purple-400">
+                        Aether Saturn
+                    </h1>
+                    <div class="flex items-center text-[10px] md:text-xs bg-black bg-opacity-30 rounded-full px-2 py-1">
+                        <span id="status-indicator" class="w-1.5 h-1.5 rounded-full bg-yellow-400 mr-2 animate-pulse"></span>
+                        <span id="status-text">Standby</span>
+                    </div>
+                </div>
                 
-                <div class="mt-4 space-y-2">
-                    <div class="flex items-center text-sm">
-                        <span id="status-indicator" class="w-2 h-2 rounded-full bg-yellow-500 mr-2 animate-pulse"></span>
-                        <span id="status-text">Ready to Start</span>
-                    </div>
-                    <div class="text-xs text-gray-400">
-                        <p>🖐 <b>Pinch/Open Hand:</b> Expand/Shrink Particles</p>
-                        <p>↔️ <b>Move Hand:</b> Rotate Vertical & Horizontal</p>
-                    </div>
+                <div class="text-[11px] md:text-xs text-gray-300 space-y-1 font-medium">
+                    <p class="flex items-center"><span class="mr-2 opacity-70">🤏</span> Pinch to Shrink / Expand</p>
+                    <p class="flex items-center"><span class="mr-2 opacity-70">👋</span> Move Hand to Rotate</p>
                 </div>
             </div>
 
-            <!-- Camera Preview & Controls -->
-            <div class="glass-panel rounded-xl p-3 flex flex-col items-center interactive-element">
-                <!-- 
-                     Fixed Aspect Ratio Container 
-                     w-32 (128px) / h-24 (96px) = 1.333 (4:3 Aspect Ratio)
-                -->
-                <div class="relative w-32 h-24 bg-black rounded-lg overflow-hidden border border-gray-700 shadow-inner group">
-                    <video class="input_video" playsinline></video>
-                    <!-- REMOVED transform scale-x-[-1] to un-mirror the camera -->
-                    <canvas class="output_canvas absolute top-0 left-0 w-full h-full object-cover"></canvas>
+            <!-- Camera & Controls -->
+            <div class="glass-panel rounded-2xl p-2 flex flex-row md:flex-col items-center gap-3 interactive-element">
+                <!-- Camera Preview Container -->
+                <div class="relative w-28 h-20 md:w-36 md:h-28 bg-black rounded-xl overflow-hidden border border-gray-600 shadow-2xl shrink-0">
+                    <video class="input_video" playsinline webkit-playsinline></video>
                     
-                    <!-- Start Button Overlay (Required for Mobile Permissions) -->
-                    <div id="start-overlay" class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-90 z-20 cursor-pointer">
-                        <div class="text-center">
-                            <button id="start-btn" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold py-1 px-3 rounded-full transition shadow-lg border border-blue-400">
-                                START
-                            </button>
-                        </div>
+                    <!-- Mirrored Canvas for Selfie Mode -->
+                    <canvas class="output_canvas mirrored-output absolute top-0 left-0 w-full h-full object-cover"></canvas>
+                    
+                    <!-- Start Button Overlay -->
+                    <div id="start-overlay" class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-80 z-20 cursor-pointer backdrop-blur-[2px]">
+                        <button id="start-btn" class="btn-pulse bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold py-1.5 px-4 rounded-full transition border border-blue-400">
+                            TAP TO START
+                        </button>
                     </div>
 
                     <div id="loading-spinner" class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-80 hidden">
                         <div class="loader"></div>
                     </div>
                     
-                    <!-- Error Message Overlay -->
-                    <div id="error-overlay" class="absolute inset-0 flex flex-col items-center justify-center bg-red-900 bg-opacity-95 hidden p-3 text-center">
-                        <p id="error-title" class="text-xs font-bold text-white mb-1">Camera Access Failed</p>
-                        <p id="error-desc" class="text-[10px] text-gray-200 leading-tight">Check permissions.</p>
+                    <!-- Error Overlay -->
+                    <div id="error-overlay" class="absolute inset-0 flex flex-col items-center justify-center bg-red-900 bg-opacity-95 hidden p-2 text-center z-30">
+                        <p id="error-title" class="text-[10px] font-bold text-white mb-1">Error</p>
+                        <p id="error-desc" class="text-[8px] text-gray-200 leading-tight">Check permissions.</p>
                     </div>
                 </div>
                 
-                <div class="mt-3 w-full">
-                    <label class="text-xs text-gray-400 block mb-1">Particle Color</label>
-                    <div class="flex items-center space-x-2">
-                        <input type="color" id="color-picker" value="#4aa8ff" class="w-8 h-8 rounded cursor-pointer border-none bg-transparent">
-                        <span class="text-xs text-gray-300 font-mono" id="color-hex">#4aa8ff</span>
+                <!-- Color Picker (Compact for Mobile) -->
+                <div class="flex flex-col justify-center w-full px-1">
+                    <label class="text-[9px] text-gray-400 mb-1 hidden md:block">Atmosphere</label>
+                    <div class="flex items-center justify-between md:justify-start gap-2">
+                        <input type="color" id="color-picker" value="#4aa8ff" class="w-8 h-8 rounded-full cursor-pointer border-2 border-white border-opacity-20 bg-transparent p-0 overflow-hidden">
+                        <span class="text-[10px] text-gray-400 font-mono md:inline hidden" id="color-hex">#4aa8ff</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Footer Data -->
-        <div class="flex justify-end">
-            <div class="glass-panel rounded-lg px-4 py-2 text-right">
-                <div class="text-xs text-gray-400 uppercase tracking-widest">Active Particles</div>
-                <div class="text-xl font-mono text-white font-bold">15,000</div>
+        <!-- Footer Stats -->
+        <div class="flex justify-end pointer-events-none">
+            <div class="glass-panel rounded-lg px-3 py-1.5 text-right opacity-80 scale-90 origin-bottom-right">
+                <div class="text-[9px] text-gray-400 uppercase tracking-widest">Particles</div>
+                <div class="text-sm font-mono text-white font-bold">12,000</div>
             </div>
         </div>
     </div>
 
 <script>
-    // --- Configuration ---
+    // --- Mobile Optimization Config ---
     const CONFIG = {
-        particleCount: 15000,
+        particleCount: 12000, 
         sphereRadius: 18,
         ringInner: 24,
-        ringOuter: 45,
+        ringOuter: 48,
         baseColor: 0x4aa8ff,
-        lerpFactor: 0.05, 
-        deadZone: 0.08, // 8% center area where no rotation happens
-        historySize: 6   // Number of frames to average
+        lerpFactor: 0.4, // HIGH value for Instant/Real-Time response
+        deadZone: 0.02,   // Very small deadzone for immediate reaction
     };
 
     // --- State Management ---
@@ -177,14 +194,10 @@
         currentScale: 1,
         targetRotationY: 0,
         currentRotationY: 0,
-        targetRotationX: 0.2, // Slight initial tilt
+        targetRotationX: 0.2, 
         currentRotationX: 0.2,
         handDetected: false,
-        pinchDistance: 0,
-        
-        // History buffers for Weighted Moving Average
-        xHistory: [],
-        yHistory: [] 
+        // History arrays removed for real-time input
     };
 
     // --- Three.js Setup ---
@@ -197,22 +210,21 @@
     camera.position.y = 20;
     camera.lookAt(0, 0, 0);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, powerPreference: "high-performance" });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); 
     container.appendChild(renderer.domElement);
 
-    // --- Particle System Generation (Saturn) ---
+    // --- Particle System ---
     const particlesGeometry = new THREE.BufferGeometry();
     const positions = [];
     const originalPositions = []; 
     const randomness = []; 
 
-    // 1. Generate Planet Sphere
+    // Generate Sphere
     for (let i = 0; i < CONFIG.particleCount * 0.4; i++) {
         const phi = Math.acos(-1 + (2 * i) / (CONFIG.particleCount * 0.4));
         const theta = Math.sqrt((CONFIG.particleCount * 0.4) * Math.PI) * phi;
-
         const r = CONFIG.sphereRadius + (Math.random() - 0.5) * 1.5; 
         
         const x = r * Math.cos(theta) * Math.sin(phi);
@@ -224,7 +236,7 @@
         randomness.push(Math.random(), Math.random(), Math.random());
     }
 
-    // 2. Generate Rings
+    // Generate Rings
     const ringCount = CONFIG.particleCount * 0.6;
     for (let i = 0; i < ringCount; i++) {
         const r = THREE.MathUtils.randFloat(CONFIG.ringInner, CONFIG.ringOuter);
@@ -232,7 +244,7 @@
         
         const x = r * Math.cos(theta);
         const z = r * Math.sin(theta);
-        const y = (Math.random() - 0.5) * 1.5; 
+        const y = (Math.random() - 0.5) * 1.2; 
 
         positions.push(x, y, z);
         originalPositions.push(x, y, z);
@@ -244,9 +256,9 @@
 
     const particlesMaterial = new THREE.PointsMaterial({
         color: CONFIG.baseColor,
-        size: 0.6,
+        size: window.devicePixelRatio > 1 ? 0.9 : 0.6, 
         transparent: true,
-        opacity: 0.8,
+        opacity: 0.85,
         blending: THREE.AdditiveBlending,
         sizeAttenuation: true
     });
@@ -257,32 +269,14 @@
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
     scene.add(ambientLight);
 
-    // --- Interaction Logic ---
+    // --- Logic Helpers ---
 
-    // UI Listeners
     const colorPicker = document.getElementById('color-picker');
-    const colorHex = document.getElementById('color-hex');
-
     colorPicker.addEventListener('input', (e) => {
-        const color = new THREE.Color(e.target.value);
-        particlesMaterial.color = color;
-        colorHex.textContent = e.target.value;
+        particlesMaterial.color = new THREE.Color(e.target.value);
     });
 
-    // Helper: Calculate Weighted Average
-    function getWeightedAverage(history) {
-        let sum = 0;
-        let weightSum = 0;
-        // Apply weights: Newest (end of array) gets higher weight
-        for(let i=0; i<history.length; i++) {
-            const weight = i + 1; // 1, 2, 3...
-            sum += history[i] * weight;
-            weightSum += weight;
-        }
-        return sum / weightSum;
-    }
-
-    // MediaPipe Setup
+    // --- MediaPipe & Camera ---
     const videoElement = document.getElementsByClassName('input_video')[0];
     const canvasElement = document.getElementsByClassName('output_canvas')[0];
     const canvasCtx = canvasElement.getContext('2d');
@@ -299,8 +293,7 @@
         if (loader.style.display !== 'none') {
             loader.style.display = 'none';
             statusText.textContent = "Tracking Active";
-            statusInd.classList.remove('bg-yellow-500');
-            statusInd.classList.add('bg-green-500');
+            statusInd.classList.replace('bg-yellow-400', 'bg-green-400');
         }
 
         canvasElement.width = results.image.width;
@@ -314,92 +307,64 @@
             const landmarks = results.multiHandLandmarks[0];
             state.handDetected = true;
 
-            drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: '#00FF00', lineWidth: 2});
-            drawLandmarks(canvasCtx, landmarks, {color: '#FF0000', lineWidth: 1, radius: 2});
+            drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: '#60a5fa', lineWidth: 3});
+            drawLandmarks(canvasCtx, landmarks, {color: '#f472b6', lineWidth: 1, radius: 3});
 
-            // --- 1. SMOOTHING (Weighted Moving Average) ---
-            
-            // Add current raw values to history
+            // 1. DIRECT RAW INPUT (Real-time, no history smoothing)
             const rawX = landmarks[9].x;
             const rawY = landmarks[9].y;
 
-            state.xHistory.push(rawX);
-            state.yHistory.push(rawY);
-
-            // Keep history at fixed size
-            if (state.xHistory.length > CONFIG.historySize) state.xHistory.shift();
-            if (state.yHistory.length > CONFIG.historySize) state.yHistory.shift();
-
-            // Calculate smoothed values
-            const smoothedX = getWeightedAverage(state.xHistory);
-            const smoothedY = getWeightedAverage(state.yHistory);
-
-
-            // --- 2. GESTURE LOGIC with DEAD ZONES ---
-
-            // Horizontal (Rotation Y)
-            const xOffsetRaw = smoothedX - 0.5;
+            // 2. LOGIC (MIRRORED SELFIE MODE)
+            // Camera is Standard (Object on Left = x~0).
+            // CSS mirrors it visually (Object appears on Right).
+            // We want "Hand on Screen Right" -> "Rotate Right".
+            // Screen Right corresponds to Camera Left (x ~ 0).
+            // Formula: (Center - x) = (0.5 - 0.1) = +0.4 (Right Turn).
+            
+            let xOffsetRaw = 0.5 - rawX; 
             let xOffsetApplied = 0;
 
-            // Dead Zone Check
+            // Dead Zone
             if (Math.abs(xOffsetRaw) > CONFIG.deadZone) {
-                // We shift the value so rotation starts at 0 right after the deadzone
-                // instead of jumping.
-                // e.g. if Deadzone is 0.1, and Input is 0.11, result is 0.01
                 const sign = Math.sign(xOffsetRaw);
                 xOffsetApplied = xOffsetRaw - (sign * CONFIG.deadZone);
-                
-                // Scale up slightly to compensate for lost range
-                // Range remaining is 0.5 - deadZone
                 const rangeScale = 0.5 / (0.5 - CONFIG.deadZone); 
                 xOffsetApplied *= rangeScale;
             }
 
-            // Apply Non-Linear Sensitivity
-            const sensitivity = 5;
-            const curvature = 1.3;
-            state.targetRotationY = Math.sign(xOffsetApplied) * Math.pow(Math.abs(xOffsetApplied), curvature) * sensitivity;
+            // Non-linear Sensitivity - Fast Response
+            state.targetRotationY = Math.sign(xOffsetApplied) * Math.pow(Math.abs(xOffsetApplied), 1.2) * 6.0;
 
-            
-            // Vertical (Rotation X) - Same Logic
-            const yOffsetRaw = 0.5 - smoothedY; // Invert for natural feel
+            // Vertical Tilt (Inverted for natural "pull" feel)
+            const yOffsetRaw = 0.5 - rawY;
             let yOffsetApplied = 0;
-
             if (Math.abs(yOffsetRaw) > CONFIG.deadZone) {
                 const sign = Math.sign(yOffsetRaw);
                 yOffsetApplied = yOffsetRaw - (sign * CONFIG.deadZone);
-                const rangeScale = 0.5 / (0.5 - CONFIG.deadZone);
-                yOffsetApplied *= rangeScale;
+                yOffsetApplied *= (0.5 / (0.5 - CONFIG.deadZone));
             }
+            state.targetRotationX = yOffsetApplied * 5.0;
 
-            state.targetRotationX = yOffsetApplied * 4;
-
-
-            // 3. EXPANSION (Pinch)
+            // 3. PINCH SCALE
             const thumbTip = landmarks[4];
             const indexTip = landmarks[8];
             const wrist = landmarks[0];
-
             const pinchDist = Math.hypot(thumbTip.x - indexTip.x, thumbTip.y - indexTip.y);
             const scaleRef = Math.hypot(wrist.x - landmarks[5].x, wrist.y - landmarks[5].y);
             
             const normalizedOpenness = pinchDist / scaleRef;
-            let expansion = (normalizedOpenness - 0.2) * 2.5; 
+            let expansion = (normalizedOpenness - 0.25) * 2.5; 
             
-            if (expansion < 0.1) expansion = 0.1;
-            if (expansion > 4.0) expansion = 4.0;
+            if (expansion < 0.15) expansion = 0.15; 
+            if (expansion > 3.5) expansion = 3.5;
             
             state.targetScale = expansion;
 
         } else {
             state.handDetected = false;
-            // Clear history so next hand entry starts fresh
-            state.xHistory = [];
-            state.yHistory = [];
-            
             state.targetScale = 1;
             
-            // Idle animation
+            // Idle Drift
             state.targetRotationY += 0.002;
             state.targetRotationX = state.currentRotationX * 0.95 + 0.2 * 0.05; 
         }
@@ -412,79 +377,71 @@
 
     hands.setOptions({
         maxNumHands: 1,
-        modelComplexity: 1,
+        modelComplexity: 1, 
         minDetectionConfidence: 0.5,
         minTrackingConfidence: 0.5
     });
 
     hands.onResults(onResults);
 
-    // Using "ideal" constraints to prevent "OverconstrainedError" on mobiles
     const cameraUtils = new Camera(videoElement, {
         onFrame: async () => {
             await hands.send({image: videoElement});
         },
-        // We do NOT strictly enforce 320x240 here in the constructor options 
-        // to avoid crashes on devices that don't support it.
-        // The width/height in options here are mainly for aspect ratio processing.
         width: 320, 
         height: 240
     });
     
-    // --- Manual Start Logic for Mobile ---
+    // --- Mobile Start Interaction ---
     startBtn.addEventListener('click', () => {
-        
-        // 1. CRITICAL: Check if running as a file
         if (window.location.protocol === 'file:') {
-            errorTitle.textContent = "Security Error";
-            errorDesc.textContent = "Browsers block camera access on local files (file://). You must run this using a local server (http://localhost) or host it online (HTTPS).";
-            startOverlay.style.display = 'none';
-            errorOverlay.style.display = 'flex';
-            statusText.textContent = "Protocol Error";
-            statusInd.classList.remove('bg-yellow-500');
-            statusInd.classList.add('bg-red-500');
-            return;
-        }
-
-        // 2. Check for Secure Context
-        if (!window.isSecureContext && window.location.hostname !== 'localhost') {
-             errorTitle.textContent = "Insecure Context";
-            errorDesc.textContent = "Camera access requires HTTPS or Localhost.";
-            startOverlay.style.display = 'none';
-            errorOverlay.style.display = 'flex';
+            showError("Security Error", "Cannot run on local file system (file://). Please use a local server or GitHub Pages.");
             return;
         }
 
         startOverlay.style.display = 'none';
         loader.style.display = 'flex';
-        statusText.textContent = "Starting Camera...";
+        statusText.textContent = "Requesting Cam...";
         
-        cameraUtils.start()
-            .then(() => {
-                console.log("Camera started successfully");
-            })
-            .catch(err => {
-                console.error("Camera failed:", err);
-                loader.style.display = 'none';
-                errorOverlay.style.display = 'flex';
-                
-                // Helpful error parsing
-                if (err.name === 'NotAllowedError') {
-                    errorTitle.textContent = "Permission Denied";
-                    errorDesc.textContent = "Please allow camera access in your browser settings.";
-                } else if (err.name === 'NotFoundError') {
-                    errorTitle.textContent = "No Camera";
-                    errorDesc.textContent = "No camera device found.";
-                } else {
-                    errorTitle.textContent = "Camera Error";
-                    errorDesc.textContent = err.message || "Unknown error.";
-                }
-                
-                statusText.textContent = "Camera Failed";
-                statusInd.classList.remove('bg-yellow-500');
-                statusInd.classList.add('bg-red-500');
-            });
+        // Mobile-friendly camera request
+        navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                facingMode: 'user', // Prefer front camera
+                width: { ideal: 320 },
+                height: { ideal: 240 }
+            } 
+        }).then(stream => {
+            stream.getTracks().forEach(track => track.stop()); 
+            statusText.textContent = "Loading AI...";
+            cameraUtils.start().catch(handleCameraError);
+        }).catch(handleCameraError);
     });
+
+    function handleCameraError(err) {
+        console.error(err);
+        loader.style.display = 'none';
+        
+        let title = "Camera Error";
+        let msg = "Unknown error occurred.";
+
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+            title = "Permission Denied";
+            msg = "Access blocked. Tap 'AA' or Lock icon in URL bar to allow camera.";
+        } else if (err.name === 'NotFoundError') {
+            title = "No Camera";
+            msg = "No front camera found.";
+        }
+        
+        showError(title, msg);
+    }
+
+    function showError(title, msg) {
+        errorTitle.textContent = title;
+        errorDesc.textContent = msg;
+        errorOverlay.style.display = 'flex';
+        statusText.textContent = "Failed";
+        statusInd.classList.replace('bg-yellow-400', 'bg-red-500');
+    }
 
     // --- Animation Loop ---
     const clock = new THREE.Clock();
@@ -494,26 +451,23 @@
         
         const time = clock.getElapsedTime();
 
-        // 1. Smooth Interpolation (LERP)
-        // Lerp factor determines the 'lag' or 'weight'. 
+        // High Speed State Updates
         state.currentScale += (state.targetScale - state.currentScale) * CONFIG.lerpFactor;
         
         if (state.handDetected) {
-            // Active control
             state.currentRotationY += (state.targetRotationY - state.currentRotationY) * CONFIG.lerpFactor;
             state.currentRotationX += (state.targetRotationX - state.currentRotationX) * CONFIG.lerpFactor;
         } else {
-            // Idle spin
-            state.currentRotationY += 0.002;
+            state.currentRotationY += 0.003; 
             state.currentRotationX += (state.targetRotationX - state.currentRotationX) * 0.05;
         }
 
-        // 2. Apply Rotations
+        // Apply Transforms
         particleSystem.rotation.y = state.currentRotationY;
         particleSystem.rotation.x = state.currentRotationX;
-        particleSystem.rotation.z = Math.cos(time * 0.1) * 0.05;
+        particleSystem.rotation.z = Math.cos(time * 0.15) * 0.08;
 
-        // 3. Update Particles
+        // Update Particles
         const positionsAttribute = particlesGeometry.attributes.position;
         const positionsArray = positionsAttribute.array;
 
@@ -526,20 +480,20 @@
             const oy = originalPositions[iy];
             const oz = originalPositions[iz];
 
-            // Scale
             let px = ox * state.currentScale;
             let py = oy * state.currentScale;
             let pz = oz * state.currentScale;
 
-            // Noise / Life
-            const noise = Math.sin(time * 2 + i * 0.1) * 0.2 * state.currentScale;
+            // Organic Wave Movement
+            const noise = Math.sin(time * 1.5 + i * 0.05) * 0.3 * state.currentScale;
             
             if (i > CONFIG.particleCount * 0.4) {
-                 // Ring orbital drift
-                 px += Math.sin(time + i) * 0.1;
-                 pz += Math.cos(time + i) * 0.1;
+                 // Ring Drift
+                 const drift = Math.sin(time * 0.5 + i) * 0.15;
+                 px += drift;
+                 pz += Math.cos(time * 0.5 + i) * 0.15;
             } else {
-                // Sphere breathing
+                // Sphere Pulse
                 px += noise;
                 py += noise;
                 pz += noise;
