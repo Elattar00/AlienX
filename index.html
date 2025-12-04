@@ -167,11 +167,19 @@
                 <!-- Shape Selector -->
                 <div class="w-full">
                     <label class="text-[9px] text-gray-500 mb-1 block uppercase tracking-wider text-center">Form</label>
-                    <div class="flex justify-between gap-2">
+                    <div class="flex justify-between gap-1 flex-wrap">
                         <button class="option-btn active w-6 h-6 rounded bg-gradient-to-br from-blue-500 to-purple-500" onclick="setShape('saturn')" title="Saturn"></button>
                         <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-green-400 to-blue-500" onclick="setShape('cube')" title="Cube"></button>
                         <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-red-500 to-orange-500" onclick="setShape('sphere')" title="Sphere"></button>
                         <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-pink-500 to-rose-500" onclick="setShape('vortex')" title="Vortex"></button>
+                        <!-- New Shapes -->
+                        <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-yellow-400 to-orange-500" onclick="setShape('torus')" title="Torus"></button>
+                        <!-- Removed Pyramid -->
+                        <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-indigo-400 to-purple-600" onclick="setShape('dna')" title="DNA"></button>
+                        <!-- Added Atom, Black Hole, Hourglass -->
+                        <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-cyan-400 to-blue-600" onclick="setShape('atom')" title="Atom"></button>
+                        <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-gray-800 to-black border border-gray-600" onclick="setShape('blackhole')" title="Black Hole"></button>
+                        <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-amber-300 to-orange-600" onclick="setShape('hourglass')" title="Hourglass"></button>
                     </div>
                 </div>
 
@@ -197,16 +205,16 @@
 <script>
     // --- Configuration ---
     const CONFIG = {
-        particleCount: 16000, 
+        particleCount: 12000, // Reduced for cleaner, organized look
         baseSize: 18, 
         
         // Control Sensitivity
-        zoomSensitivity: 3.5,  // Multiplier for hand distance to zoom
-        baseHandSize: 0.2,     // The 'normal' hand size reference (0-1 scale)
-        fistThreshold: 0.5,    // < 0.5 means fist is closed
+        zoomSensitivity: 3.5,  
+        baseHandSize: 0.2,     
+        fistThreshold: 0.5,    
         
-        lerpSpeed: 0.1,        // Smoothness of movements
-        shapeMorphSpeed: 0.05, // Speed of particles moving to new shape
+        lerpSpeed: 0.15, // Responsive rotation       
+        shapeMorphSpeed: 0.15, // Faster morphing
         
         historySize: 2
     };
@@ -222,16 +230,9 @@
 
     // --- State ---
     const state = {
-        // Transform Targets
-        targetScale: 1,
-        currentScale: 1,
-        
-        targetScatter: 0,
-        currentScatter: 0,
-        
-        rotY: 0, rotX: 0.2,
-        targetRotY: 0, targetRotX: 0.2,
-        
+        targetScale: 1, currentScale: 1,
+        targetScatter: 0, currentScatter: 0,
+        rotY: 0, rotX: 0.2, targetRotY: 0, targetRotX: 0.2,
         handDetected: false,
         xHistory: [], yHistory: [],
         lastStableX: 0.5, lastStableY: 0.5
@@ -244,7 +245,6 @@
         const ctx = canvas.getContext('2d');
         const cx = 64; const cy = 64;
         
-        // Sharp star burst
         const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, 64);
         gradient.addColorStop(0, 'rgba(255, 255, 255, 1)'); 
         gradient.addColorStop(0.15, 'rgba(255, 255, 255, 0.9)'); 
@@ -253,7 +253,6 @@
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, 128, 128);
         
-        // Core center
         ctx.beginPath();
         ctx.arc(cx, cy, 8, 0, Math.PI * 2);
         ctx.fillStyle = '#FFFFFF';
@@ -267,7 +266,7 @@
     // --- Three.js ---
     const container = document.getElementById('canvas-container');
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x0a0510, 0.008); // Slight purple tint to fog
+    scene.fog = new THREE.FogExp2(0x0a0510, 0.008); 
 
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.z = 80;
@@ -283,27 +282,19 @@
     const starGeo = new THREE.BufferGeometry();
     const starPos = [];
     const starSizes = [];
-    // Generate 2000 stars
-    for(let i=0; i<2000; i++) {
+    for(let i=0; i<3000; i++) {
         const x = (Math.random() - 0.5) * 800;
         const y = (Math.random() - 0.5) * 800;
         const z = (Math.random() - 0.5) * 800;
         starPos.push(x, y, z);
-        starSizes.push(Math.random() * 2.0); // Size variation
+        starSizes.push(Math.random() * 2.0); 
     }
     starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
     starGeo.setAttribute('size', new THREE.Float32BufferAttribute(starSizes, 1));
     
-    // Reuse the glow texture for stars so they aren't squares
     const starMat = new THREE.PointsMaterial({
-        color: 0xffffff,
-        size: 1.0, // Base size
-        map: getTexture(), // Use same texture
-        transparent: true,
-        opacity: 0.8,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        sizeAttenuation: true
+        color: 0xffffff, size: 1.0, map: getTexture(), transparent: true,
+        opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true
     });
     
     const stars = new THREE.Points(starGeo, starMat);
@@ -312,8 +303,6 @@
 
     // --- Particles & Buffers ---
     const particlesGeometry = new THREE.BufferGeometry();
-    
-    // Arrays to hold data
     const currentPositions = new Float32Array(CONFIG.particleCount * 3);
     const targetPositions = new Float32Array(CONFIG.particleCount * 3);
     const scatterVectors = new Float32Array(CONFIG.particleCount * 3);
@@ -322,12 +311,11 @@
 
     // Initialize Arrays
     for(let i=0; i<CONFIG.particleCount; i++) {
-        // Scatter vectors (Random explosion direction)
         const u = Math.random();
         const v = Math.random();
         const theta = 2 * Math.PI * u;
         const phi = Math.acos(2 * v - 1);
-        const r = 40 + Math.random() * 60; // Scatter radius
+        const r = 40 + Math.random() * 60; 
         const sx = r * Math.sin(phi) * Math.cos(theta);
         const sy = r * Math.sin(phi) * Math.sin(theta);
         const sz = r * Math.cos(phi);
@@ -351,9 +339,7 @@
             const ix = i*3;
 
             if (type === 'saturn') {
-                // Sphere + Ring
                 if (i < CONFIG.particleCount * 0.4) {
-                    // Core
                     const phi = Math.acos(-1 + (2 * i) / (CONFIG.particleCount * 0.4));
                     const theta = Math.sqrt((CONFIG.particleCount * 0.4) * Math.PI) * phi;
                     const rad = CONFIG.baseSize + (Math.random()-0.5);
@@ -362,7 +348,6 @@
                     z = rad * Math.cos(phi);
                     r=c1.r; g=c1.g; b=c1.b;
                 } else {
-                    // Rings
                     const rad = THREE.MathUtils.randFloat(26, 52);
                     const theta = Math.random() * Math.PI * 2;
                     x = rad * Math.cos(theta);
@@ -374,56 +359,179 @@
                 }
             } 
             else if (type === 'cube') {
-                // Surface of a Cube
                 const side = CONFIG.baseSize * 1.5;
                 const face = Math.floor(Math.random() * 6);
                 const u = (Math.random() - 0.5) * 2 * side;
                 const v = (Math.random() - 0.5) * 2 * side;
-                
                 if (face===0) { x=side; y=u; z=v; }
                 else if (face===1) { x=-side; y=u; z=v; }
                 else if (face===2) { x=u; y=side; z=v; }
                 else if (face===3) { x=u; y=-side; z=v; }
                 else if (face===4) { x=u; y=v; z=side; }
                 else { x=u; y=v; z=-side; }
-                
-                // Add noise for "Electric Cube" look
-                x += (Math.random()-0.5);
-                y += (Math.random()-0.5);
-                z += (Math.random()-0.5);
-                
-                const dist = Math.abs(u) + Math.abs(v); // Color gradient based on center
+                x += (Math.random()-0.5); y += (Math.random()-0.5); z += (Math.random()-0.5);
+                const dist = Math.abs(u) + Math.abs(v);
                 const mix = Math.min(dist / (side*2), 1);
                 const c = new THREE.Color().lerpColors(c1, c2, mix);
                 r=c.r; g=c.g; b=c.b;
             }
             else if (type === 'sphere') {
-                // Dyson Sphere (Hollow)
                 const phi = Math.acos(-1 + (2 * i) / CONFIG.particleCount);
                 const theta = Math.sqrt(CONFIG.particleCount * Math.PI) * phi;
                 const rad = CONFIG.baseSize * 1.5;
                 x = rad * Math.cos(theta) * Math.sin(phi);
                 y = rad * Math.sin(theta) * Math.sin(phi);
                 z = rad * Math.cos(phi);
-                
-                // Grid pattern logic
                 const lat = Math.abs(y/rad);
                 const c = new THREE.Color().lerpColors(c1, c2, lat);
                 r=c.r; g=c.g; b=c.b;
             }
             else if (type === 'vortex') {
-                // Galaxy Spiral
                 const branchAngle = (i % 3) * ((2 * Math.PI) / 3);
                 const rad = Math.random() * 50;
                 const spin = rad * 0.1;
                 const angle = branchAngle + spin;
-                
-                // Spiral arms
                 x = Math.cos(angle) * rad;
                 z = Math.sin(angle) * rad;
-                y = (Math.random() - 0.5) * (10 - rad * 0.15); // Thicker center
-                
+                y = (Math.random() - 0.5) * (10 - rad * 0.15); 
                 const mix = rad / 50;
+                const c = new THREE.Color().lerpColors(c1, c2, mix);
+                r=c.r; g=c.g; b=c.b;
+            }
+            else if (type === 'torus') {
+                const u = Math.random() * Math.PI * 2;
+                const v = Math.random() * Math.PI * 2;
+                const R = 30; 
+                const tube = 10; 
+                x = (R + tube * Math.cos(v)) * Math.cos(u);
+                z = (R + tube * Math.cos(v)) * Math.sin(u);
+                y = tube * Math.sin(v);
+                const mix = Math.abs(Math.sin(u * 2));
+                const c = new THREE.Color().lerpColors(c1, c2, mix);
+                r=c.r; g=c.g; b=c.b;
+            }
+            // Removed Pyramid logic block
+            else if (type === 'dna') {
+                const h = (i / CONFIG.particleCount) * 80 - 40; 
+                const angle = h * 0.2;
+                const rad = 12;
+                const offset = (i % 2 === 0) ? 0 : Math.PI;
+                x = Math.cos(angle + offset) * rad;
+                z = Math.sin(angle + offset) * rad;
+                y = h;
+                x += (Math.random()-0.5)*2;
+                z += (Math.random()-0.5)*2;
+                const c = (i % 2 === 0) ? c1 : c2;
+                r=c.r; g=c.g; b=c.b;
+            }
+            // New Shapes Logic
+            else if (type === 'atom') {
+                // Nucleus (small sphere)
+                if (i < CONFIG.particleCount * 0.2) {
+                    const phi = Math.acos(-1 + (2 * i) / (CONFIG.particleCount * 0.2));
+                    const theta = Math.sqrt((CONFIG.particleCount * 0.2) * Math.PI) * phi;
+                    const rad = CONFIG.baseSize * 0.4 + (Math.random()-0.5);
+                    x = rad * Math.cos(theta) * Math.sin(phi);
+                    y = rad * Math.sin(theta) * Math.sin(phi);
+                    z = rad * Math.cos(phi);
+                    r=c1.r; g=c1.g; b=c1.b;
+                } else {
+                    // 3 orbital rings
+                    const ringPart = (i - CONFIG.particleCount * 0.2);
+                    const ringTotal = CONFIG.particleCount * 0.8;
+                    const ringIndex = Math.floor(ringPart / (ringTotal / 3));
+                    const rad = CONFIG.baseSize * 3.0;
+                    const theta = Math.random() * Math.PI * 2;
+                    // Ring thickness
+                    const rt = (Math.random()-0.5)*1.5;
+
+                    if (ringIndex === 0) { // Ring 1 (XY plane rotated 60 deg)
+                        x = rad * Math.cos(theta); y = rad * Math.sin(theta); z = rt;
+                        const rot = Math.PI / 3;
+                        const y_new = y * Math.cos(rot) - z * Math.sin(rot);
+                        const z_new = y * Math.sin(rot) + z * Math.cos(rot);
+                        y = y_new; z = z_new;
+                    } else if (ringIndex === 1) { // Ring 2 (XY plane rotated -60 deg)
+                         x = rad * Math.cos(theta); y = rad * Math.sin(theta); z = rt;
+                         const rot = -Math.PI / 3;
+                         const y_new = y * Math.cos(rot) - z * Math.sin(rot);
+                         const z_new = y * Math.sin(rot) + z * Math.cos(rot);
+                         y = y_new; z = z_new;
+                    } else { // Ring 3 (XZ plane)
+                         x = rad * Math.cos(theta); z = rad * Math.sin(theta); y = rt;
+                    }
+                    const mix = Math.random()*0.5+0.5;
+                    const c = new THREE.Color().lerpColors(c1, c2, mix);
+                    r=c.r; g=c.g; b=c.b;
+                }
+            }
+            else if (type === 'blackhole') {
+                // Core singularity
+                if (i < CONFIG.particleCount * 0.05) {
+                    const rad = Math.random() * CONFIG.baseSize * 0.3;
+                    const theta = Math.random() * Math.PI * 2;
+                    const phi = Math.random() * Math.PI;
+                    x = rad * Math.sin(phi) * Math.cos(theta);
+                    y = rad * Math.sin(phi) * Math.sin(theta);
+                    z = rad * Math.cos(phi);
+                    // Dark core
+                    r=c1.r*0.1; g=c1.g*0.1; b=c1.b*0.1;
+                } else {
+                    // Accretion Disk
+                    const j = (i - CONFIG.particleCount * 0.05) / (CONFIG.particleCount * 0.95);
+                    // Logarithmic distribution for dense center
+                    const rad = CONFIG.baseSize * 0.5 + Math.pow(j, 0.7) * CONFIG.baseSize * 4;
+                    
+                    const angle = j * Math.PI * 30; // Many spirals
+                    const theta = angle + rad * 0.02;
+                    
+                    x = rad * Math.cos(theta);
+                    z = rad * Math.sin(theta);
+                    // Flat disk with slight bulge near center
+                    y = (Math.random() - 0.5) * (1 + rad * 0.05) * Math.exp(-rad*0.08);
+
+                    // Color: Hot center (c1), cool edge (c2)
+                    const mix = Math.pow(j, 0.5);
+                    const c = new THREE.Color().lerpColors(c1, c2, mix);
+                    // Make outer edges darker
+                    const brightness = 1 - j*0.5;
+                    r=c.r*brightness; g=c.g*brightness; b=c.b*brightness;
+                }
+            }
+            else if (type === 'hourglass') {
+                const half = CONFIG.particleCount / 2;
+                const h = CONFIG.baseSize * 3; // Total height / 2
+                const w = CONFIG.baseSize * 2.5;   // Max radius
+                let nh, rad;
+
+                if (i < half) {
+                    // Top Cone (y > 0)
+                    nh = i / half; // 0 to 1
+                    y = nh * h + 1; // +1 gap at center
+                    rad = nh * w;
+                } else {
+                    // Bottom Cone (y < 0)
+                    nh = (i - half) / half; // 0 to 1
+                    y = -nh * h - 1; // -1 gap at center
+                    rad = nh * w;
+                }
+
+                // Pinch center tightly
+                rad = Math.pow(rad/w, 1.5) * w;
+
+                const theta = Math.random() * Math.PI * 2;
+                x = rad * Math.cos(theta);
+                z = rad * Math.sin(theta);
+
+                // Add some particles "falling" through the center neck
+                if (Math.random() > 0.97) {
+                     x = (Math.random()-0.5)*2;
+                     z = (Math.random()-0.5)*2;
+                     y = (Math.random()-0.5)*h*2;
+                }
+
+                // Color by radial distance from center axis
+                const mix = rad / w;
                 const c = new THREE.Color().lerpColors(c1, c2, mix);
                 r=c.r; g=c.g; b=c.b;
             }
@@ -450,7 +558,7 @@
         vertexColors: true,
         transparent: true,
         opacity: 0.9,
-        blending: THREE.NormalBlending, // Avoid washout
+        blending: THREE.NormalBlending, 
         depthWrite: false,
         sizeAttenuation: true
     });
@@ -473,7 +581,7 @@
             currentTheme = theme;
             document.querySelectorAll('#theme-container div').forEach(b => b.classList.remove('scale-110', 'border-white', 'shadow-lg'));
             btn.classList.add('scale-110', 'border-white', 'shadow-lg');
-            updateShapeData(); // Refresh colors
+            updateShapeData(); 
         };
         themeContainer.appendChild(btn);
     });
@@ -488,15 +596,9 @@
 
     function updateShapeData() {
         const data = generateShape(currentShape);
-        // We do NOT snap targetPositions. We define them as the new destination.
-        // The animate loop will lerp currentPositions -> targetPositions.
-        // But since we want the *colors* to change too, we need to handle that.
-        // For simplicity in this demo, we snap the target array data.
-        
-        // We copy the new shape calculation into the target buffer
         for(let i=0; i<data.pos.length; i++) {
             targetPositions[i] = data.pos[i];
-            colors[i] = data.col[i]; // Instant color change for responsiveness
+            colors[i] = data.col[i]; 
         }
         particlesGeometry.attributes.color.needsUpdate = true;
     }
@@ -535,15 +637,9 @@
             // --- 1. ZOOM (Distance) ---
             const wrist = landmarks[0];
             const midMCP = landmarks[9];
-            // Hand size on screen (0.0 to 1.0 approx)
             const handSize = Math.hypot(wrist.x - midMCP.x, wrist.y - midMCP.y);
-            
-            // Logic: handSize / baseSize. 
-            // If hand is 0.2 (normal) -> scale 1.
-            // If hand is 0.4 (close) -> scale 2.
-            // If hand is 0.1 (far) -> scale 0.5.
             let zoom = handSize / CONFIG.baseHandSize;
-            zoom = Math.max(0.2, Math.min(zoom, 3.0)); // Clamp
+            zoom = Math.max(0.2, Math.min(zoom, 8.0)); 
             state.targetScale = zoom;
             zoomVal.textContent = Math.round(zoom * 100) + "%";
 
@@ -551,10 +647,8 @@
             const thumbTip = landmarks[4];
             const indexTip = landmarks[8];
             const pinchDist = Math.hypot(thumbTip.x - indexTip.x, thumbTip.y - indexTip.y);
-            // Normalize against hand size so it works at any distance
             const openness = pinchDist / handSize; 
             
-            // Fist = Scatter
             if (openness < CONFIG.fistThreshold) {
                 state.targetScatter = 1.0;
                 scatterAlert.style.opacity = 1;
@@ -566,10 +660,6 @@
             // --- 3. ROTATION (Position) ---
             const x = landmarks[9].x;
             const y = landmarks[9].y;
-            
-            // Map 0..1 to rotation
-            // Mirror logic: Hand Right (x=0) -> Rot Right (+)
-            // Center is 0.5
             state.targetRotY = (0.5 - x) * 4.0;
             state.targetRotX = (0.5 - y) * 4.0;
 
@@ -577,10 +667,8 @@
             state.handDetected = false;
             trackDot.classList.replace('bg-green-500', 'bg-red-500');
             state.targetScatter = 0;
-            state.targetScale = 1; // Reset zoom
+            state.targetScale = 1; 
             scatterAlert.style.opacity = 0;
-            
-            // Idle Spin
             state.targetRotY += 0.002;
             state.targetRotX = state.rotX * 0.9 + 0.2 * 0.1;
         }
@@ -615,11 +703,11 @@
         // 1. Smooth Interps
         state.currentScale += (state.targetScale - state.currentScale) * CONFIG.lerpSpeed;
         
-        // ASYMMETRIC SCATTER SPEED
-        // If target is 1 (Scattering), go slow (0.05). 
-        // If target is 0 (Reuniting), go FAST (0.2) for magnetic snap effect.
-        const scatterSpeed = state.targetScatter > 0.5 ? 0.05 : 0.2;
-        state.currentScatter += (state.targetScatter - state.currentScatter) * scatterSpeed;
+        // INSTANT REUNITE LOGIC
+        // If target is 1 (Scatter), go fast (0.2).
+        // If target is 0 (Assemble), go INSTANT (0.8) for magnetic snap.
+        const scatterSpeed = state.targetScatter > 0.5 ? 0.2 : 0.8;
+        state.currentScatter += (state.targetScatter - state.currentScatter) * scatterSpeed; 
         
         if (state.handDetected) {
             state.rotY += (state.targetRotY - state.rotY) * CONFIG.lerpSpeed;
@@ -634,7 +722,9 @@
         particleSystem.rotation.x = state.rotX;
         particleSystem.scale.set(state.currentScale, state.currentScale, state.currentScale);
         
-        // Rotate background stars slowly
+        // Dynamic Density
+        particlesMaterial.size = 1.2 + Math.log(Math.max(1, state.currentScale)) * 0.5;
+        
         stars.rotation.y = time * 0.02;
 
         // 3. Particle Morphing & Physics
@@ -643,8 +733,7 @@
         for(let i=0; i<CONFIG.particleCount; i++) {
             const ix = i*3; const iy = i*3+1; const iz = i*3+2;
             
-            // A. Morphing: Move Current Position towards Target Shape Position
-            // This creates the shape-shifting animation
+            // A. Morphing
             let cx = currentPositions[ix];
             let cy = currentPositions[iy];
             let cz = currentPositions[iz];
@@ -653,7 +742,6 @@
             const ty = targetPositions[iy];
             const tz = targetPositions[iz];
             
-            // Lerp towards target shape
             cx += (tx - cx) * CONFIG.shapeMorphSpeed;
             cy += (ty - cy) * CONFIG.shapeMorphSpeed;
             cz += (tz - cz) * CONFIG.shapeMorphSpeed;
@@ -662,18 +750,16 @@
             currentPositions[iy] = cy;
             currentPositions[iz] = cz;
 
-            // B. Scattering: Mix Morph Position with Explosion Position
+            // B. Scattering
             const sx = scatterVectors[ix];
             const sy = scatterVectors[iy];
             const sz = scatterVectors[iz];
             
-            // Final render position
-            // If scatter is 0, use shape position (cx). If 1, use scatter position (sx).
             const fx = cx + (sx - cx) * state.currentScatter;
             const fy = cy + (sy - cy) * state.currentScatter;
             const fz = cz + (sz - cz) * state.currentScatter;
             
-            // C. Idle Animation (Breathing/Twinkle) - Only if not scattered
+            // C. Idle Animation
             let noise = 0;
             if (state.currentScatter < 0.1) {
                 noise = Math.sin(time * 2 + i) * 0.05;
