@@ -43,8 +43,10 @@
             width: 100%;
             height: 100%;
             z-index: 1;
-            /* Rich Galactic Gradient: Deep Void to Nebula Purple */
-            background: radial-gradient(circle at 50% 50%, #1a0b2e 0%, #090910 60%, #000000 100%);
+            /* Deep, multi-layered nebula background */
+            background: radial-gradient(circle at 30% 40%, rgba(59, 130, 246, 0.2) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 60%, rgba(168, 85, 247, 0.2) 0%, transparent 50%),
+                        radial-gradient(circle at 50% 50%, #0a0510 0%, #000000 100%);
         }
 
         #ui-layer {
@@ -106,28 +108,25 @@
             box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
         }
         
-        /* Scatter Warning */
-        #scatter-alert {
+        /* Scatter Warning - Now Cyan/Blue instead of Red */
+        #scatter-text {
             opacity: 0;
             transition: opacity 0.2s ease;
+            color: #22d3ee; 
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(34, 211, 238, 0.5);
         }
     </style>
 </head>
 <body>
 
-    <!-- 3D Canvas -->
     <div id="canvas-container"></div>
 
-    <!-- UI Overlay -->
     <div id="ui-layer" class="flex flex-col justify-between p-4 md:p-6 safe-area-inset">
-        
-        <!-- Header -->
         <div class="flex flex-col md:flex-row justify-between items-start gap-4">
             
             <!-- Info Card -->
             <div class="glass-panel rounded-2xl p-4 text-white w-full md:w-auto md:max-w-xs interactive-element border-l-4 border-purple-500 relative overflow-hidden">
-                <div id="scatter-alert" class="absolute inset-0 bg-red-500 bg-opacity-20 pointer-events-none"></div>
-                
                 <div class="flex justify-between items-center mb-2 relative z-10">
                     <h1 class="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-300 to-pink-400">
                         Matter Control
@@ -139,13 +138,13 @@
                 </div>
                 
                 <div class="text-[10px] text-gray-300 space-y-1 font-medium tracking-wide relative z-10">
-                    <p>✊ <b>Fist:</b> Scatter / Explode</p>
-                    <p>✋ <b>Open Hand:</b> Assemble</p>
+                    <p>✊ <b>Fist:</b> Scatter <span id="scatter-text">ACTIVE</span></p>
+                    <p>✋ <b>Opening:</b> Assemble</p>
                     <p>↔️ <b>Distance:</b> Zoom In/Out</p>
                 </div>
             </div>
 
-            <!-- Controls Container -->
+            <!-- Controls -->
             <div class="glass-panel rounded-2xl p-3 flex flex-col items-center gap-3 interactive-element">
                 <!-- Camera -->
                 <div class="relative w-32 h-24 bg-black rounded-xl overflow-hidden border border-gray-700 shadow-2xl">
@@ -164,26 +163,22 @@
                     </div>
                 </div>
                 
-                <!-- Shape Selector -->
+                <!-- Shapes -->
                 <div class="w-full">
                     <label class="text-[9px] text-gray-500 mb-1 block uppercase tracking-wider text-center">Form</label>
                     <div class="flex justify-between gap-1 flex-wrap">
                         <button class="option-btn active w-6 h-6 rounded bg-gradient-to-br from-blue-500 to-purple-500" onclick="setShape('saturn')" title="Saturn"></button>
                         <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-green-400 to-blue-500" onclick="setShape('cube')" title="Cube"></button>
-                        <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-red-500 to-orange-500" onclick="setShape('sphere')" title="Sphere"></button>
+                        <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-orange-500 to-amber-600" onclick="setShape('sphere')" title="Sphere"></button>
                         <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-pink-500 to-rose-500" onclick="setShape('vortex')" title="Vortex"></button>
-                        <!-- New Shapes -->
                         <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-yellow-400 to-orange-500" onclick="setShape('torus')" title="Torus"></button>
-                        <!-- Removed Pyramid -->
                         <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-indigo-400 to-purple-600" onclick="setShape('dna')" title="DNA"></button>
-                        <!-- Added Atom, Black Hole, Hourglass -->
                         <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-cyan-400 to-blue-600" onclick="setShape('atom')" title="Atom"></button>
-                        <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-gray-800 to-black border border-gray-600" onclick="setShape('blackhole')" title="Black Hole"></button>
                         <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-amber-300 to-orange-600" onclick="setShape('hourglass')" title="Hourglass"></button>
                     </div>
                 </div>
 
-                <!-- Theme Selector -->
+                <!-- Themes -->
                 <div class="w-full">
                     <label class="text-[9px] text-gray-500 mb-1 block uppercase tracking-wider text-center">Energy</label>
                     <div class="flex items-center justify-center gap-2 overflow-x-auto pb-1" id="theme-container"></div>
@@ -191,7 +186,6 @@
             </div>
         </div>
 
-        <!-- Footer -->
         <div class="flex justify-end pointer-events-none">
             <div class="glass-panel rounded-lg px-3 py-1.5 text-right opacity-80 scale-90 origin-bottom-right border-r-2 border-purple-500">
                 <div class="text-[9px] text-purple-300 uppercase tracking-widest">Hand Tracking</div>
@@ -203,27 +197,26 @@
     </div>
 
 <script>
-    // --- Configuration ---
+    // --- Config ---
     const CONFIG = {
-        particleCount: 12000, // Reduced for cleaner, organized look
+        particleCount: 12000, 
         baseSize: 18, 
-        
-        // Control Sensitivity
         zoomSensitivity: 3.5,  
         baseHandSize: 0.2,     
         fistThreshold: 0.5,    
         
-        lerpSpeed: 0.15, // Responsive rotation       
-        shapeMorphSpeed: 0.15, // Faster morphing
+        lerpSpeed: 0.15,       // Reverted to 0.15 for faster response
+        shapeMorphSpeed: 0.15,
         
-        historySize: 2
+        historySize: 3,        // Reduced buffer for less latency
+        stabilityThreshold: 0.015 
     };
 
+    // --- Config & Themes ---
     const THEMES = [
         { name: 'Cosmic', core: '#a855f7', ring: '#3b82f6' },
-        { name: 'Fire',   core: '#f59e0b', ring: '#ef4444' },
-        { name: 'Toxic',  core: '#22c55e', ring: '#eab308' },
-        { name: 'Ice',    core: '#06b6d4', ring: '#3b82f6' }
+        { name: 'Aurora', core: '#10b981', ring: '#8b5cf6' },
+        { name: 'Plasma', core: '#2563eb', ring: '#7c3aed' }
     ];
     let currentTheme = THEMES[0];
     let currentShape = 'saturn';
@@ -232,6 +225,7 @@
     const state = {
         targetScale: 1, currentScale: 1,
         targetScatter: 0, currentScatter: 0,
+        isExploded: false, // LATCH FLAG
         rotY: 0, rotX: 0.2, targetRotY: 0, targetRotX: 0.2,
         handDetected: false,
         xHistory: [], yHistory: [],
@@ -244,7 +238,6 @@
         canvas.width = 128; canvas.height = 128;
         const ctx = canvas.getContext('2d');
         const cx = 64; const cy = 64;
-        
         const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, 64);
         gradient.addColorStop(0, 'rgba(255, 255, 255, 1)'); 
         gradient.addColorStop(0.15, 'rgba(255, 255, 255, 0.9)'); 
@@ -252,12 +245,7 @@
         gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, 128, 128);
-        
-        ctx.beginPath();
-        ctx.arc(cx, cy, 8, 0, Math.PI * 2);
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fill();
-
+        ctx.beginPath(); ctx.arc(cx, cy, 8, 0, Math.PI * 2); ctx.fillStyle = '#FFFFFF'; ctx.fill();
         const texture = new THREE.Texture(canvas);
         texture.needsUpdate = true;
         return texture;
@@ -266,42 +254,45 @@
     // --- Three.js ---
     const container = document.getElementById('canvas-container');
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x0a0510, 0.008); 
-
+    scene.fog = new THREE.FogExp2(0x0a0518, 0.008); 
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.z = 80;
-    camera.position.y = 0;
-    camera.lookAt(0, 0, 0);
-
+    camera.position.z = 80; camera.position.y = 0; camera.lookAt(0, 0, 0);
     const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, powerPreference: "high-performance" });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
     container.appendChild(renderer.domElement);
 
-    // --- Background Stars ---
-    const starGeo = new THREE.BufferGeometry();
-    const starPos = [];
-    const starSizes = [];
-    for(let i=0; i<3000; i++) {
-        const x = (Math.random() - 0.5) * 800;
-        const y = (Math.random() - 0.5) * 800;
-        const z = (Math.random() - 0.5) * 800;
-        starPos.push(x, y, z);
-        starSizes.push(Math.random() * 2.0); 
+    // --- Stars & Dust ---
+    const starGeo1 = new THREE.BufferGeometry();
+    const starPos1 = []; const starSizes1 = [];
+    for(let i=0; i<2000; i++) {
+        starPos1.push((Math.random()-0.5)*1200, (Math.random()-0.5)*1200, (Math.random()-0.5)*1200);
+        starSizes1.push(Math.random() * 1.5); 
     }
-    starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
-    starGeo.setAttribute('size', new THREE.Float32BufferAttribute(starSizes, 1));
-    
-    const starMat = new THREE.PointsMaterial({
-        color: 0xffffff, size: 1.0, map: getTexture(), transparent: true,
-        opacity: 0.8, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true
+    starGeo1.setAttribute('position', new THREE.Float32BufferAttribute(starPos1, 3));
+    starGeo1.setAttribute('size', new THREE.Float32BufferAttribute(starSizes1, 1));
+    const starMat1 = new THREE.PointsMaterial({
+        color: 0xa0a0ff, size: 1.0, map: getTexture(), transparent: true,
+        opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true
     });
-    
-    const stars = new THREE.Points(starGeo, starMat);
-    scene.add(stars);
+    scene.add(new THREE.Points(starGeo1, starMat1));
 
+    const starGeo2 = new THREE.BufferGeometry();
+    const starPos2 = []; const starSizes2 = [];
+    for(let i=0; i<800; i++) {
+        starPos2.push((Math.random()-0.5)*800, (Math.random()-0.5)*800, (Math.random()-0.5)*800);
+        starSizes2.push(0.8 + Math.random() * 2.0); 
+    }
+    starGeo2.setAttribute('position', new THREE.Float32BufferAttribute(starPos2, 3));
+    starGeo2.setAttribute('size', new THREE.Float32BufferAttribute(starSizes2, 1));
+    const starMat2 = new THREE.PointsMaterial({
+        color: 0xffffff, size: 1.0, map: getTexture(), transparent: true,
+        opacity: 0.9, blending: THREE.AdditiveBlending, depthWrite: false, sizeAttenuation: true
+    });
+    const stars2 = new THREE.Points(starGeo2, starMat2);
+    scene.add(stars2);
 
-    // --- Particles & Buffers ---
+    // --- Particles ---
     const particlesGeometry = new THREE.BufferGeometry();
     const currentPositions = new Float32Array(CONFIG.particleCount * 3);
     const targetPositions = new Float32Array(CONFIG.particleCount * 3);
@@ -309,25 +300,16 @@
     const colors = new Float32Array(CONFIG.particleCount * 3);
     const sizes = new Float32Array(CONFIG.particleCount);
 
-    // Initialize Arrays
     for(let i=0; i<CONFIG.particleCount; i++) {
-        const u = Math.random();
-        const v = Math.random();
-        const theta = 2 * Math.PI * u;
-        const phi = Math.acos(2 * v - 1);
+        const u = Math.random(); const v = Math.random();
+        const theta = 2 * Math.PI * u; const phi = Math.acos(2 * v - 1);
         const r = 40 + Math.random() * 60; 
-        const sx = r * Math.sin(phi) * Math.cos(theta);
-        const sy = r * Math.sin(phi) * Math.sin(theta);
-        const sz = r * Math.cos(phi);
-        
-        scatterVectors[i*3] = sx;
-        scatterVectors[i*3+1] = sy;
-        scatterVectors[i*3+2] = sz;
-        
+        scatterVectors[i*3] = r * Math.sin(phi) * Math.cos(theta);
+        scatterVectors[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+        scatterVectors[i*3+2] = r * Math.cos(phi);
         sizes[i] = 0.8 + Math.random() * 1.0;
     }
 
-    // --- Shape Generators ---
     function generateShape(type) {
         const newPos = new Float32Array(CONFIG.particleCount * 3);
         const newCol = new Float32Array(CONFIG.particleCount * 3);
@@ -337,242 +319,93 @@
         for(let i=0; i<CONFIG.particleCount; i++) {
             let x, y, z, r, g, b;
             const ix = i*3;
-
             if (type === 'saturn') {
                 if (i < CONFIG.particleCount * 0.4) {
-                    const phi = Math.acos(-1 + (2 * i) / (CONFIG.particleCount * 0.4));
-                    const theta = Math.sqrt((CONFIG.particleCount * 0.4) * Math.PI) * phi;
-                    const rad = CONFIG.baseSize + (Math.random()-0.5);
-                    x = rad * Math.cos(theta) * Math.sin(phi);
-                    y = rad * Math.sin(theta) * Math.sin(phi);
-                    z = rad * Math.cos(phi);
+                    const phi = Math.acos(-1 + (2*i)/(CONFIG.particleCount*0.4));
+                    const theta = Math.sqrt((CONFIG.particleCount*0.4)*Math.PI)*phi;
+                    const rad = CONFIG.baseSize+(Math.random()-0.5);
+                    x = rad*Math.cos(theta)*Math.sin(phi); y = rad*Math.sin(theta)*Math.sin(phi); z = rad*Math.cos(phi);
                     r=c1.r; g=c1.g; b=c1.b;
                 } else {
-                    const rad = THREE.MathUtils.randFloat(26, 52);
-                    const theta = Math.random() * Math.PI * 2;
-                    x = rad * Math.cos(theta);
-                    z = rad * Math.sin(theta);
-                    y = (Math.random()-0.5) * 0.5;
-                    const mix = (rad-26)/(52-26);
-                    const c = new THREE.Color().lerpColors(c1, c2, mix);
+                    const rad = THREE.MathUtils.randFloat(26,52);
+                    const theta = Math.random()*Math.PI*2;
+                    x = rad*Math.cos(theta); z = rad*Math.sin(theta); y = (Math.random()-0.5)*0.5;
+                    const mix = (rad-26)/(52-26); const c = new THREE.Color().lerpColors(c1,c2,mix);
                     r=c.r; g=c.g; b=c.b;
                 }
-            } 
-            else if (type === 'cube') {
+            } else if (type === 'cube') {
                 const side = CONFIG.baseSize * 1.5;
                 const face = Math.floor(Math.random() * 6);
                 const u = (Math.random() - 0.5) * 2 * side;
                 const v = (Math.random() - 0.5) * 2 * side;
-                if (face===0) { x=side; y=u; z=v; }
-                else if (face===1) { x=-side; y=u; z=v; }
-                else if (face===2) { x=u; y=side; z=v; }
-                else if (face===3) { x=u; y=-side; z=v; }
-                else if (face===4) { x=u; y=v; z=side; }
-                else { x=u; y=v; z=-side; }
-                x += (Math.random()-0.5); y += (Math.random()-0.5); z += (Math.random()-0.5);
-                const dist = Math.abs(u) + Math.abs(v);
-                const mix = Math.min(dist / (side*2), 1);
-                const c = new THREE.Color().lerpColors(c1, c2, mix);
-                r=c.r; g=c.g; b=c.b;
-            }
-            else if (type === 'sphere') {
-                const phi = Math.acos(-1 + (2 * i) / CONFIG.particleCount);
-                const theta = Math.sqrt(CONFIG.particleCount * Math.PI) * phi;
-                const rad = CONFIG.baseSize * 1.5;
-                x = rad * Math.cos(theta) * Math.sin(phi);
-                y = rad * Math.sin(theta) * Math.sin(phi);
-                z = rad * Math.cos(phi);
-                const lat = Math.abs(y/rad);
-                const c = new THREE.Color().lerpColors(c1, c2, lat);
-                r=c.r; g=c.g; b=c.b;
-            }
-            else if (type === 'vortex') {
-                const branchAngle = (i % 3) * ((2 * Math.PI) / 3);
-                const rad = Math.random() * 50;
-                const spin = rad * 0.1;
-                const angle = branchAngle + spin;
-                x = Math.cos(angle) * rad;
-                z = Math.sin(angle) * rad;
-                y = (Math.random() - 0.5) * (10 - rad * 0.15); 
-                const mix = rad / 50;
-                const c = new THREE.Color().lerpColors(c1, c2, mix);
-                r=c.r; g=c.g; b=c.b;
-            }
-            else if (type === 'torus') {
-                const u = Math.random() * Math.PI * 2;
-                const v = Math.random() * Math.PI * 2;
-                const R = 30; 
-                const tube = 10; 
-                x = (R + tube * Math.cos(v)) * Math.cos(u);
-                z = (R + tube * Math.cos(v)) * Math.sin(u);
-                y = tube * Math.sin(v);
-                const mix = Math.abs(Math.sin(u * 2));
-                const c = new THREE.Color().lerpColors(c1, c2, mix);
-                r=c.r; g=c.g; b=c.b;
-            }
-            // Removed Pyramid logic block
-            else if (type === 'dna') {
-                const h = (i / CONFIG.particleCount) * 80 - 40; 
-                const angle = h * 0.2;
-                const rad = 12;
-                const offset = (i % 2 === 0) ? 0 : Math.PI;
-                x = Math.cos(angle + offset) * rad;
-                z = Math.sin(angle + offset) * rad;
-                y = h;
-                x += (Math.random()-0.5)*2;
-                z += (Math.random()-0.5)*2;
-                const c = (i % 2 === 0) ? c1 : c2;
-                r=c.r; g=c.g; b=c.b;
-            }
-            // New Shapes Logic
-            else if (type === 'atom') {
-                // Nucleus (small sphere)
-                if (i < CONFIG.particleCount * 0.2) {
-                    const phi = Math.acos(-1 + (2 * i) / (CONFIG.particleCount * 0.2));
-                    const theta = Math.sqrt((CONFIG.particleCount * 0.2) * Math.PI) * phi;
-                    const rad = CONFIG.baseSize * 0.4 + (Math.random()-0.5);
-                    x = rad * Math.cos(theta) * Math.sin(phi);
-                    y = rad * Math.sin(theta) * Math.sin(phi);
-                    z = rad * Math.cos(phi);
+                if(face===0){x=side;y=u;z=v;}else if(face===1){x=-side;y=u;z=v;}else if(face===2){x=u;y=side;z=v;}
+                else if(face===3){x=u;y=-side;z=v;}else if(face===4){x=u;y=v;z=side;}else{x=u;y=v;z=-side;}
+                x+=(Math.random()-0.5); y+=(Math.random()-0.5); z+=(Math.random()-0.5);
+                const mix = Math.min((Math.abs(u)+Math.abs(v))/(side*2), 1);
+                const c = new THREE.Color().lerpColors(c1,c2,mix); r=c.r; g=c.g; b=c.b;
+            } else if (type === 'sphere') {
+                const phi = Math.acos(-1+(2*i)/CONFIG.particleCount);
+                const theta = Math.sqrt(CONFIG.particleCount*Math.PI)*phi;
+                const rad = CONFIG.baseSize*1.5;
+                x=rad*Math.cos(theta)*Math.sin(phi); y=rad*Math.sin(theta)*Math.sin(phi); z=rad*Math.cos(phi);
+                const c=new THREE.Color().lerpColors(c1,c2,Math.abs(y/rad)); r=c.r; g=c.g; b=c.b;
+            } else if (type === 'vortex') {
+                const branchAngle=(i%3)*((2*Math.PI)/3); const rad=Math.random()*50;
+                const angle=branchAngle+rad*0.1;
+                x=Math.cos(angle)*rad; z=Math.sin(angle)*rad; y=(Math.random()-0.5)*(10-rad*0.15);
+                const c=new THREE.Color().lerpColors(c1,c2,rad/50); r=c.r; g=c.g; b=c.b;
+            } else if (type === 'torus') {
+                const u=Math.random()*Math.PI*2; const v=Math.random()*Math.PI*2;
+                x=(30+10*Math.cos(v))*Math.cos(u); z=(30+10*Math.cos(v))*Math.sin(u); y=10*Math.sin(v);
+                const c=new THREE.Color().lerpColors(c1,c2,Math.abs(Math.sin(u*2))); r=c.r; g=c.g; b=c.b;
+            } else if (type === 'dna') {
+                const h=(i/CONFIG.particleCount)*80-40; const angle=h*0.2; const rad=12;
+                const offset=(i%2===0)?0:Math.PI;
+                x=Math.cos(angle+offset)*rad+(Math.random()-0.5)*2; z=Math.sin(angle+offset)*rad+(Math.random()-0.5)*2; y=h;
+                const c=(i%2===0)?c1:c2; r=c.r; g=c.g; b=c.b;
+            } else if (type === 'atom') {
+                if(i<CONFIG.particleCount*0.2) {
+                    const phi = Math.acos(-1+(2*i)/(CONFIG.particleCount*0.2));
+                    const theta = Math.sqrt((CONFIG.particleCount*0.2)*Math.PI)*phi;
+                    const rad = CONFIG.baseSize*0.4+(Math.random()-0.5);
+                    x=rad*Math.cos(theta)*Math.sin(phi); y=rad*Math.sin(theta)*Math.sin(phi); z=rad*Math.cos(phi);
                     r=c1.r; g=c1.g; b=c1.b;
                 } else {
-                    // 3 orbital rings
-                    const ringPart = (i - CONFIG.particleCount * 0.2);
-                    const ringTotal = CONFIG.particleCount * 0.8;
-                    const ringIndex = Math.floor(ringPart / (ringTotal / 3));
-                    const rad = CONFIG.baseSize * 3.0;
-                    const theta = Math.random() * Math.PI * 2;
-                    // Ring thickness
-                    const rt = (Math.random()-0.5)*1.5;
-
-                    if (ringIndex === 0) { // Ring 1 (XY plane rotated 60 deg)
-                        x = rad * Math.cos(theta); y = rad * Math.sin(theta); z = rt;
-                        const rot = Math.PI / 3;
-                        const y_new = y * Math.cos(rot) - z * Math.sin(rot);
-                        const z_new = y * Math.sin(rot) + z * Math.cos(rot);
-                        y = y_new; z = z_new;
-                    } else if (ringIndex === 1) { // Ring 2 (XY plane rotated -60 deg)
-                         x = rad * Math.cos(theta); y = rad * Math.sin(theta); z = rt;
-                         const rot = -Math.PI / 3;
-                         const y_new = y * Math.cos(rot) - z * Math.sin(rot);
-                         const z_new = y * Math.sin(rot) + z * Math.cos(rot);
-                         y = y_new; z = z_new;
-                    } else { // Ring 3 (XZ plane)
-                         x = rad * Math.cos(theta); z = rad * Math.sin(theta); y = rt;
-                    }
-                    const mix = Math.random()*0.5+0.5;
-                    const c = new THREE.Color().lerpColors(c1, c2, mix);
-                    r=c.r; g=c.g; b=c.b;
+                    const ringPart=(i-CONFIG.particleCount*0.2); const ringTotal=CONFIG.particleCount*0.8;
+                    const ringIndex=Math.floor(ringPart/(ringTotal/3)); const rad=CONFIG.baseSize*3.0;
+                    const theta=Math.random()*Math.PI*2; const rt=(Math.random()-0.5)*1.5;
+                    if(ringIndex===0){x=rad*Math.cos(theta);y=rad*Math.sin(theta);z=rt;const rot=Math.PI/3;const yn=y*Math.cos(rot)-z*Math.sin(rot);const zn=y*Math.sin(rot)+z*Math.cos(rot);y=yn;z=zn;}
+                    else if(ringIndex===1){x=rad*Math.cos(theta);y=rad*Math.sin(theta);z=rt;const rot=-Math.PI/3;const yn=y*Math.cos(rot)-z*Math.sin(rot);const zn=y*Math.sin(rot)+z*Math.cos(rot);y=yn;z=zn;}
+                    else{x=rad*Math.cos(theta);z=rad*Math.sin(theta);y=rt;}
+                    const c=new THREE.Color().lerpColors(c1,c2,Math.random()*0.5+0.5); r=c.r; g=c.g; b=c.b;
                 }
+            } else if (type === 'hourglass') {
+                const half=CONFIG.particleCount/2; const h=CONFIG.baseSize*3; const w=CONFIG.baseSize*2.5; let nh,rad;
+                if(i<half){nh=i/half;y=nh*h+1;rad=nh*w;}else{nh=(i-half)/half;y=-nh*h-1;rad=nh*w;}
+                rad=Math.pow(rad/w,1.5)*w; const theta=Math.random()*Math.PI*2;
+                x=rad*Math.cos(theta); z=rad*Math.sin(theta);
+                if(Math.random()>0.97){x=(Math.random()-0.5)*2;z=(Math.random()-0.5)*2;y=(Math.random()-0.5)*h*2;}
+                const c=new THREE.Color().lerpColors(c1,c2,rad/w); r=c.r; g=c.g; b=c.b;
             }
-            else if (type === 'blackhole') {
-                // Core singularity
-                if (i < CONFIG.particleCount * 0.05) {
-                    const rad = Math.random() * CONFIG.baseSize * 0.3;
-                    const theta = Math.random() * Math.PI * 2;
-                    const phi = Math.random() * Math.PI;
-                    x = rad * Math.sin(phi) * Math.cos(theta);
-                    y = rad * Math.sin(phi) * Math.sin(theta);
-                    z = rad * Math.cos(phi);
-                    // Dark core
-                    r=c1.r*0.1; g=c1.g*0.1; b=c1.b*0.1;
-                } else {
-                    // Accretion Disk
-                    const j = (i - CONFIG.particleCount * 0.05) / (CONFIG.particleCount * 0.95);
-                    // Logarithmic distribution for dense center
-                    const rad = CONFIG.baseSize * 0.5 + Math.pow(j, 0.7) * CONFIG.baseSize * 4;
-                    
-                    const angle = j * Math.PI * 30; // Many spirals
-                    const theta = angle + rad * 0.02;
-                    
-                    x = rad * Math.cos(theta);
-                    z = rad * Math.sin(theta);
-                    // Flat disk with slight bulge near center
-                    y = (Math.random() - 0.5) * (1 + rad * 0.05) * Math.exp(-rad*0.08);
-
-                    // Color: Hot center (c1), cool edge (c2)
-                    const mix = Math.pow(j, 0.5);
-                    const c = new THREE.Color().lerpColors(c1, c2, mix);
-                    // Make outer edges darker
-                    const brightness = 1 - j*0.5;
-                    r=c.r*brightness; g=c.g*brightness; b=c.b*brightness;
-                }
-            }
-            else if (type === 'hourglass') {
-                const half = CONFIG.particleCount / 2;
-                const h = CONFIG.baseSize * 3; // Total height / 2
-                const w = CONFIG.baseSize * 2.5;   // Max radius
-                let nh, rad;
-
-                if (i < half) {
-                    // Top Cone (y > 0)
-                    nh = i / half; // 0 to 1
-                    y = nh * h + 1; // +1 gap at center
-                    rad = nh * w;
-                } else {
-                    // Bottom Cone (y < 0)
-                    nh = (i - half) / half; // 0 to 1
-                    y = -nh * h - 1; // -1 gap at center
-                    rad = nh * w;
-                }
-
-                // Pinch center tightly
-                rad = Math.pow(rad/w, 1.5) * w;
-
-                const theta = Math.random() * Math.PI * 2;
-                x = rad * Math.cos(theta);
-                z = rad * Math.sin(theta);
-
-                // Add some particles "falling" through the center neck
-                if (Math.random() > 0.97) {
-                     x = (Math.random()-0.5)*2;
-                     z = (Math.random()-0.5)*2;
-                     y = (Math.random()-0.5)*h*2;
-                }
-
-                // Color by radial distance from center axis
-                const mix = rad / w;
-                const c = new THREE.Color().lerpColors(c1, c2, mix);
-                r=c.r; g=c.g; b=c.b;
-            }
-
-            newPos[ix] = x; newPos[ix+1] = y; newPos[ix+2] = z;
-            newCol[ix] = r; newCol[ix+1] = g; newCol[ix+2] = b;
+            newPos[ix]=x; newPos[ix+1]=y; newPos[ix+2]=z; newCol[ix]=r; newCol[ix+1]=g; newCol[ix+2]=b;
         }
         return { pos: newPos, col: newCol };
     }
 
-    // Initial Generation
     const initData = generateShape('saturn');
-    targetPositions.set(initData.pos);
-    currentPositions.set(initData.pos);
-    colors.set(initData.col);
-
+    targetPositions.set(initData.pos); currentPositions.set(initData.pos); colors.set(initData.col);
     particlesGeometry.setAttribute('position', new THREE.BufferAttribute(currentPositions, 3));
     particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     particlesGeometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-
-    const particlesMaterial = new THREE.PointsMaterial({
-        size: 1.2,
-        map: getTexture(),
-        vertexColors: true,
-        transparent: true,
-        opacity: 0.9,
-        blending: THREE.NormalBlending, 
-        depthWrite: false,
-        sizeAttenuation: true
-    });
-
+    const particlesMaterial = new THREE.PointsMaterial({ size: 1.2, map: getTexture(), vertexColors: true, transparent: true, opacity: 0.9, blending: THREE.NormalBlending, depthWrite: false, sizeAttenuation: true });
     const particleSystem = new THREE.Points(particlesGeometry, particlesMaterial);
     scene.add(particleSystem);
 
-    // --- UI Logic ---
     const themeContainer = document.getElementById('theme-container');
     const zoomVal = document.getElementById('zoom-val');
     const trackDot = document.getElementById('track-dot');
-    const scatterAlert = document.getElementById('scatter-alert');
+    const scatterText = document.getElementById('scatter-text');
 
-    // Theme Buttons
     THEMES.forEach((theme, index) => {
         const btn = document.createElement('div');
         btn.className = `w-6 h-6 rounded-full cursor-pointer border-2 border-white/20 transition-all ${index === 0 ? 'scale-110 border-white shadow-lg' : ''}`;
@@ -586,7 +419,6 @@
         themeContainer.appendChild(btn);
     });
 
-    // Shape Switcher
     window.setShape = (shape) => {
         currentShape = shape;
         document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('active'));
@@ -603,7 +435,6 @@
         particlesGeometry.attributes.color.needsUpdate = true;
     }
 
-    // --- MediaPipe Logic ---
     const videoElement = document.getElementsByClassName('input_video')[0];
     const canvasElement = document.getElementsByClassName('output_canvas')[0];
     const canvasCtx = canvasElement.getContext('2d');
@@ -611,66 +442,110 @@
     const startBtn = document.getElementById('start-btn');
     const startOverlay = document.getElementById('start-overlay');
 
+    function getWeightedAverage(history) {
+        if(history.length === 0) return 0.5;
+        let sum = 0, weightSum = 0;
+        for(let i=0; i<history.length; i++) {
+            const w = i + 1;
+            sum += history[i] * w;
+            weightSum += w;
+        }
+        return sum / weightSum;
+    }
+
     function onResults(results) {
         if (loader.style.display !== 'none') {
             loader.style.display = 'none';
             document.getElementById('status-text').textContent = "Connected";
             document.getElementById('status-indicator').classList.replace('bg-yellow-400', 'bg-green-400');
         }
-
-        // Draw Feed
-        canvasElement.width = results.image.width;
-        canvasElement.height = results.image.height;
-        canvasCtx.save();
-        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-        // Draw normal - CSS mirrors it
+        canvasElement.width = results.image.width; canvasElement.height = results.image.height;
+        canvasCtx.save(); canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
         canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
         
         if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
             const landmarks = results.multiHandLandmarks[0];
             state.handDetected = true;
             trackDot.classList.replace('bg-red-500', 'bg-green-500');
-
             drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: 'rgba(168, 85, 247, 0.5)', lineWidth: 2});
             drawLandmarks(canvasCtx, landmarks, {color: '#FFFFFF', lineWidth: 1, radius: 2});
 
-            // --- 1. ZOOM (Distance) ---
-            const wrist = landmarks[0];
-            const midMCP = landmarks[9];
+            const wrist = landmarks[0]; const midMCP = landmarks[9];
             const handSize = Math.hypot(wrist.x - midMCP.x, wrist.y - midMCP.y);
             let zoom = handSize / CONFIG.baseHandSize;
             zoom = Math.max(0.2, Math.min(zoom, 8.0)); 
             state.targetScale = zoom;
             zoomVal.textContent = Math.round(zoom * 100) + "%";
 
-            // --- 2. SCATTER (Fist) ---
-            const thumbTip = landmarks[4];
-            const indexTip = landmarks[8];
+            const thumbTip = landmarks[4]; const indexTip = landmarks[8];
             const pinchDist = Math.hypot(thumbTip.x - indexTip.x, thumbTip.y - indexTip.y);
             const openness = pinchDist / handSize; 
             
+            // --- LOGIC CORRECTION ---
             if (openness < CONFIG.fistThreshold) {
-                state.targetScatter = 1.0;
-                scatterAlert.style.opacity = 1;
+                // Fist detected: Trigger automatic scatter
+                state.isExploded = true;
+                state.targetScatter = 1.0; 
+                if(scatterText) scatterText.style.opacity = 1;
             } else {
-                state.targetScatter = 0.0;
-                scatterAlert.style.opacity = 0;
+                // Not a fist. 
+                if (state.isExploded) {
+                    // IF exploded previously, now control re-assembly via hand opening (Real-time)
+                    const range = 0.6; // 1.1 - 0.5
+                    let val = (openness - CONFIG.fistThreshold) / range;
+                    val = Math.max(0, Math.min(1, val));
+                    
+                    // As hand opens (val goes 0->1), scatter goes 1->0
+                    state.targetScatter = 1.0 - val; 
+                    
+                    // Reset latch if fully assembled
+                    if (state.targetScatter < 0.05) {
+                        state.isExploded = false;
+                        state.targetScatter = 0.0;
+                    }
+                } else {
+                    // Not exploded, not a fist: Force solid. Ignore closing motion.
+                    state.targetScatter = 0.0;
+                    if(scatterText) scatterText.style.opacity = 0;
+                }
             }
 
-            // --- 3. ROTATION (Position) ---
-            const x = landmarks[9].x;
-            const y = landmarks[9].y;
+            // Smoothing with stability check
+            state.xHistory.push(landmarks[9].x);
+            state.yHistory.push(landmarks[9].y);
+            if(state.xHistory.length > CONFIG.historySize) state.xHistory.shift();
+            if(state.yHistory.length > CONFIG.historySize) state.yHistory.shift();
+
+            const smoothedX = getWeightedAverage(state.xHistory);
+            const smoothedY = getWeightedAverage(state.yHistory);
+
+            const deltaX = Math.abs(smoothedX - state.lastStableX);
+            const deltaY = Math.abs(smoothedY - state.lastStableY);
+            
+            let stableX = state.lastStableX;
+            let stableY = state.lastStableY;
+
+            if (deltaX > CONFIG.stabilityThreshold) {
+                state.lastStableX = smoothedX;
+                stableX = smoothedX;
+            }
+            if (deltaY > CONFIG.stabilityThreshold) {
+                state.lastStableY = smoothedY;
+                stableY = smoothedY;
+            }
+
+            const x = stableX; 
+            const y = stableY;
             state.targetRotY = (0.5 - x) * 4.0;
             state.targetRotX = (0.5 - y) * 4.0;
-
         } else {
             state.handDetected = false;
             trackDot.classList.replace('bg-green-500', 'bg-red-500');
-            state.targetScatter = 0;
-            state.targetScale = 1; 
-            scatterAlert.style.opacity = 0;
-            state.targetRotY += 0.002;
-            state.targetRotX = state.rotX * 0.9 + 0.2 * 0.1;
+            state.isExploded = false; // Reset on hand loss
+            state.targetScatter = 0; state.targetScale = 1; 
+            if(scatterText) scatterText.style.opacity = 0;
+            state.targetRotY += 0.002; state.targetRotX = state.rotX * 0.9 + 0.2 * 0.1;
+            state.xHistory = []; state.yHistory = [];
         }
         canvasCtx.restore();
     }
@@ -693,21 +568,22 @@
         });
     };
 
-    // --- Animation Loop ---
     const clock = new THREE.Clock();
 
     function animate() {
         requestAnimationFrame(animate);
         const time = clock.getElapsedTime();
 
-        // 1. Smooth Interps
         state.currentScale += (state.targetScale - state.currentScale) * CONFIG.lerpSpeed;
         
-        // INSTANT REUNITE LOGIC
-        // If target is 1 (Scatter), go fast (0.2).
-        // If target is 0 (Assemble), go INSTANT (0.8) for magnetic snap.
-        const scatterSpeed = state.targetScatter > 0.5 ? 0.2 : 0.8;
-        state.currentScatter += (state.targetScatter - state.currentScatter) * scatterSpeed; 
+        // MIXED SCATTER ANIMATION
+        if (state.isExploded && state.targetScatter > 0.9) {
+            // Initial Explosion: Slower cinematic movement
+            state.currentScatter += (state.targetScatter - state.currentScatter) * 0.05;
+        } else {
+            // Reassembling (Controlled by hand): Fast Real-Time response
+            state.currentScatter += (state.targetScatter - state.currentScatter) * 0.4;
+        }
         
         if (state.handDetected) {
             state.rotY += (state.targetRotY - state.rotY) * CONFIG.lerpSpeed;
@@ -717,57 +593,25 @@
             state.rotX += (state.targetRotX - state.rotX) * 0.05;
         }
 
-        // 2. Global Transforms
         particleSystem.rotation.y = state.rotY;
         particleSystem.rotation.x = state.rotX;
         particleSystem.scale.set(state.currentScale, state.currentScale, state.currentScale);
-        
-        // Dynamic Density
         particlesMaterial.size = 1.2 + Math.log(Math.max(1, state.currentScale)) * 0.5;
-        
-        stars.rotation.y = time * 0.02;
+        stars2.rotation.y = time * 0.02;
 
-        // 3. Particle Morphing & Physics
         const posAttr = particlesGeometry.attributes.position;
-        
         for(let i=0; i<CONFIG.particleCount; i++) {
             const ix = i*3; const iy = i*3+1; const iz = i*3+2;
-            
-            // A. Morphing
-            let cx = currentPositions[ix];
-            let cy = currentPositions[iy];
-            let cz = currentPositions[iz];
-            
-            const tx = targetPositions[ix];
-            const ty = targetPositions[iy];
-            const tz = targetPositions[iz];
-            
-            cx += (tx - cx) * CONFIG.shapeMorphSpeed;
-            cy += (ty - cy) * CONFIG.shapeMorphSpeed;
-            cz += (tz - cz) * CONFIG.shapeMorphSpeed;
-            
-            currentPositions[ix] = cx;
-            currentPositions[iy] = cy;
-            currentPositions[iz] = cz;
+            let cx = currentPositions[ix]; let cy = currentPositions[iy]; let cz = currentPositions[iz];
+            const tx = targetPositions[ix]; const ty = targetPositions[iy]; const tz = targetPositions[iz];
+            cx += (tx - cx) * CONFIG.shapeMorphSpeed; cy += (ty - cy) * CONFIG.shapeMorphSpeed; cz += (tz - cz) * CONFIG.shapeMorphSpeed;
+            currentPositions[ix] = cx; currentPositions[iy] = cy; currentPositions[iz] = cz;
 
-            // B. Scattering
-            const sx = scatterVectors[ix];
-            const sy = scatterVectors[iy];
-            const sz = scatterVectors[iz];
-            
-            const fx = cx + (sx - cx) * state.currentScatter;
-            const fy = cy + (sy - cy) * state.currentScatter;
-            const fz = cz + (sz - cz) * state.currentScatter;
-            
-            // C. Idle Animation
-            let noise = 0;
-            if (state.currentScatter < 0.1) {
-                noise = Math.sin(time * 2 + i) * 0.05;
-            }
-
+            const sx = scatterVectors[ix]; const sy = scatterVectors[iy]; const sz = scatterVectors[iz];
+            const fx = cx + (sx - cx) * state.currentScatter; const fy = cy + (sy - cy) * state.currentScatter; const fz = cz + (sz - cz) * state.currentScatter;
+            let noise = 0; if (state.currentScatter < 0.1) { noise = Math.sin(time * 2 + i) * 0.05; }
             posAttr.setXYZ(i, fx + noise, fy + noise, fz + noise);
         }
-        
         posAttr.needsUpdate = true;
         renderer.render(scene, camera);
     }
