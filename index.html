@@ -108,7 +108,7 @@
             box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
         }
         
-        /* Scatter Warning - Now Cyan/Blue instead of Red */
+        /* Scatter Warning - Cyan/Blue */
         #scatter-text {
             opacity: 0;
             transition: opacity 0.2s ease;
@@ -202,13 +202,17 @@
         particleCount: 12000, 
         baseSize: 18, 
         zoomSensitivity: 3.5,  
-        baseHandSize: 0.2,     
+        
+        // 0.20 approximates a hand at a comfortable ~50cm distance for 1x scale
+        baseHandSize: 0.20,     
+        
         fistThreshold: 0.5,    
         
-        lerpSpeed: 0.15,       // Reverted to 0.15 for faster response
+        // Optimized for Low Latency / Real Time
+        lerpSpeed: 0.25,       // High speed for snappy response
         shapeMorphSpeed: 0.15,
         
-        historySize: 3,        // Reduced buffer for less latency
+        historySize: 2,        // Minimal buffering to reduce delay
         stabilityThreshold: 0.015 
     };
 
@@ -319,6 +323,7 @@
         for(let i=0; i<CONFIG.particleCount; i++) {
             let x, y, z, r, g, b;
             const ix = i*3;
+            // Shape Logic
             if (type === 'saturn') {
                 if (i < CONFIG.particleCount * 0.4) {
                     const phi = Math.acos(-1 + (2*i)/(CONFIG.particleCount*0.4));
@@ -473,7 +478,8 @@
             const wrist = landmarks[0]; const midMCP = landmarks[9];
             const handSize = Math.hypot(wrist.x - midMCP.x, wrist.y - midMCP.y);
             let zoom = handSize / CONFIG.baseHandSize;
-            zoom = Math.max(0.2, Math.min(zoom, 8.0)); 
+            // Allow up to 10x zoom per request
+            zoom = Math.max(0.2, Math.min(zoom, 10.0)); 
             state.targetScale = zoom;
             zoomVal.textContent = Math.round(zoom * 100) + "%";
 
@@ -481,30 +487,25 @@
             const pinchDist = Math.hypot(thumbTip.x - indexTip.x, thumbTip.y - indexTip.y);
             const openness = pinchDist / handSize; 
             
-            // --- LOGIC CORRECTION ---
+            // --- SCATTER LOGIC ---
             if (openness < CONFIG.fistThreshold) {
                 // Fist detected: Trigger automatic scatter
                 state.isExploded = true;
                 state.targetScatter = 1.0; 
                 if(scatterText) scatterText.style.opacity = 1;
             } else {
-                // Not a fist. 
                 if (state.isExploded) {
-                    // IF exploded previously, now control re-assembly via hand opening (Real-time)
+                    // IF exploded, control re-assembly via hand opening (Real-time)
                     const range = 0.6; // 1.1 - 0.5
                     let val = (openness - CONFIG.fistThreshold) / range;
                     val = Math.max(0, Math.min(1, val));
-                    
-                    // As hand opens (val goes 0->1), scatter goes 1->0
                     state.targetScatter = 1.0 - val; 
                     
-                    // Reset latch if fully assembled
                     if (state.targetScatter < 0.05) {
                         state.isExploded = false;
                         state.targetScatter = 0.0;
                     }
                 } else {
-                    // Not exploded, not a fist: Force solid. Ignore closing motion.
                     state.targetScatter = 0.0;
                     if(scatterText) scatterText.style.opacity = 0;
                 }
@@ -541,7 +542,7 @@
         } else {
             state.handDetected = false;
             trackDot.classList.replace('bg-green-500', 'bg-red-500');
-            state.isExploded = false; // Reset on hand loss
+            state.isExploded = false; 
             state.targetScatter = 0; state.targetScale = 1; 
             if(scatterText) scatterText.style.opacity = 0;
             state.targetRotY += 0.002; state.targetRotX = state.rotX * 0.9 + 0.2 * 0.1;
