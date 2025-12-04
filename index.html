@@ -239,26 +239,15 @@
         STAR_COUNT_SMALL: 2000,
         STAR_COUNT_LARGE: 800,
         
-        // Rendering - OPTIMIZED FOR RESPONSIVENESS
+        // Rendering
         BASE_SIZE: 18,
-        ZOOM_SENSITIVITY: 4.0, // Increased for more responsive zoom
+        ZOOM_SENSITIVITY: 3.5,
         BASE_HAND_SIZE: 0.2,
         FIST_THRESHOLD: 0.5,
-        
-        // RESPONSIVENESS OPTIMIZATION - Faster lerping
-        ROTATION_LERP_SPEED: 0.25, // Increased from 0.15
-        SCALE_LERP_SPEED: 0.3,    // Increased from 0.15
-        SCATTER_LERP_SPEED: 0.35, // Increased from 0.4/0.05
-        
+        LERP_SPEED: 0.15,
         SHAPE_MORPH_SPEED: 0.15,
-        
-        // NEW: Adaptive smoothing for different gestures
-        HISTORY_SIZE: 2,           // Reduced from 3 for less lag
-        STABILITY_THRESHOLD: 0.008, // Reduced from 0.015 for more sensitivity
-        
-        // NEW: Velocity-based responsiveness
-        VELOCITY_SMOOTHING: 0.7,   // How much velocity affects response
-        MAX_VELOCITY: 0.3,         // Cap for velocity influence
+        HISTORY_SIZE: 3,
+        STABILITY_THRESHOLD: 0.015,
         
         // Camera
         INITIAL_CAMERA_Z: 80,
@@ -266,7 +255,7 @@
         
         // Zoom limits
         MIN_ZOOM: 0.2,
-        MAX_ZOOM: 10.0,
+        MAX_ZOOM: 10.0, // Changed from 8.0 to 10.0
         
         // Scene dimensions
         SCENE_BOUNDS: 1200,
@@ -298,24 +287,10 @@
             this.targetRotY = 0;
             this.targetRotX = 0.2;
             this.handDetected = false;
-            
-            // NEW: Improved smoothing with velocity tracking
             this.xHistory = [];
             this.yHistory = [];
             this.lastStableX = 0.5;
             this.lastStableY = 0.5;
-            this.velocityX = 0;
-            this.velocityY = 0;
-            this.lastUpdateTime = performance.now();
-            
-            // NEW: Exponential moving average for smooth values
-            this.smoothX = 0.5;
-            this.smoothY = 0.5;
-            this.smoothZoom = 1;
-            
-            // NEW: Adaptive response curve
-            this.lastRawX = 0.5;
-            this.lastRawY = 0.5;
         }
         
         resetOnHandLoss() {
@@ -325,48 +300,8 @@
             this.targetScale = 1;
             this.xHistory = [];
             this.yHistory = [];
-            this.velocityX = 0;
-            this.velocityY = 0;
             this.targetRotY = this.rotY;
             this.targetRotX = this.rotX * 0.9 + 0.2 * 0.1;
-        }
-        
-        // NEW: Exponential moving average filter
-        updateSmoothValues(rawX, rawY, zoom) {
-            const alpha = 0.5; // Responsiveness factor
-            this.smoothX = alpha * rawX + (1 - alpha) * this.smoothX;
-            this.smoothY = alpha * rawY + (1 - alpha) * this.smoothY;
-            this.smoothZoom = alpha * zoom + (1 - alpha) * this.smoothZoom;
-        }
-        
-        // NEW: Calculate velocity for adaptive response
-        calculateVelocity(currentX, currentY) {
-            const now = performance.now();
-            const deltaTime = Math.min((now - this.lastUpdateTime) / 1000, 0.1); // Cap deltaTime
-            this.lastUpdateTime = now;
-            
-            if (deltaTime > 0) {
-                const newVelocityX = (currentX - this.lastRawX) / deltaTime;
-                const newVelocityY = (currentY - this.lastRawY) / deltaTime;
-                
-                // Smooth velocity changes
-                this.velocityX = 0.3 * newVelocityX + 0.7 * this.velocityX;
-                this.velocityY = 0.3 * newVelocityY + 0.7 * this.velocityY;
-                
-                // Cap velocity
-                this.velocityX = Math.max(-CONSTANTS.MAX_VELOCITY, Math.min(CONSTANTS.MAX_VELOCITY, this.velocityX));
-                this.velocityY = Math.max(-CONSTANTS.MAX_VELOCITY, Math.min(CONSTANTS.MAX_VELOCITY, this.velocityY));
-            }
-            
-            this.lastRawX = currentX;
-            this.lastRawY = currentY;
-        }
-        
-        // NEW: Get adaptive lerp speed based on velocity
-        getAdaptiveLerpSpeed(baseSpeed) {
-            const velocityMagnitude = Math.sqrt(this.velocityX * this.velocityX + this.velocityY * this.velocityY);
-            const velocityFactor = 1 + (velocityMagnitude / CONSTANTS.MAX_VELOCITY) * CONSTANTS.VELOCITY_SMOOTHING;
-            return Math.min(baseSpeed * velocityFactor, baseSpeed * 2); // Cap at 2x
         }
     }
 
@@ -408,6 +343,7 @@
         }
         
         dispose() {
+            // Dispose Three.js resources
             this.resources.forEach(resource => {
                 if (resource.dispose) resource.dispose();
                 if (resource.geometry) resource.geometry.dispose();
@@ -420,6 +356,7 @@
                 }
             });
             
+            // Clear arrays
             this.resources = [];
             this.texture = null;
         }
@@ -440,21 +377,25 @@
         }
         
         init() {
+            // Scene setup
             this.scene.fog = new THREE.FogExp2(0x0a0518, CONSTANTS.FOG_DENSITY);
             
+            // Camera setup
             this.camera.position.z = CONSTANTS.INITIAL_CAMERA_Z;
             this.camera.position.y = 0;
             this.camera.lookAt(0, 0, 0);
             
+            // Renderer setup
             this.renderer = new THREE.WebGLRenderer({ 
                 antialias: false, 
                 alpha: true, 
                 powerPreference: "high-performance" 
             });
             this.renderer.setSize(window.innerWidth, window.innerHeight);
-            this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit pixel ratio for performance
             this.container.appendChild(this.renderer.domElement);
             
+            // Add to resource manager for cleanup
             resourceManager.resources.push(this.scene, this.camera, this.renderer);
         }
         
@@ -531,6 +472,7 @@
             const colors = new Float32Array(particleCount * 3);
             const sizes = new Float32Array(particleCount);
             
+            // Initialize scatter vectors
             for(let i = 0; i < particleCount; i++) {
                 const u = Math.random();
                 const v = Math.random();
@@ -543,11 +485,13 @@
                 sizes[i] = 0.8 + Math.random() * 1.0;
             }
             
+            // Generate initial shape
             const initData = ShapeGenerator.generate('saturn', particleCount, currentTheme);
             targetPositions.set(initData.pos);
-            currentPositions.set(initData.pos.slice());
+            currentPositions.set(initData.pos.slice()); // Copy array
             colors.set(initData.col);
             
+            // Set up geometry attributes
             particlesGeometry.setAttribute('position', new THREE.BufferAttribute(currentPositions, 3));
             particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
             particlesGeometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
@@ -566,6 +510,7 @@
             this.particleSystem = new THREE.Points(particlesGeometry, particlesMaterial);
             this.scene.add(this.particleSystem);
             
+            // Store references for animation
             this.particlesGeometry = particlesGeometry;
             this.particlesMaterial = particlesMaterial;
             this.currentPositions = currentPositions;
@@ -762,6 +707,7 @@
                         break;
                         
                     default:
+                        // Default to saturn
                         x = y = z = r = g = b = 0;
                 }
                 
@@ -830,6 +776,7 @@
             button.classList.add('scale-110', 'border-white', 'shadow-lg');
             this.currentThemeLabel.textContent = theme.name;
             
+            // Update shape with new theme
             if (sceneManager.particleSystem) {
                 updateShapeData();
             }
@@ -849,10 +796,8 @@
         updateTracking(status, zoom = null) {
             if (status === 'tracking') {
                 this.trackDot.classList.replace('bg-red-500', 'bg-green-500');
-                this.trackDot.classList.add('animate-pulse');
             } else {
                 this.trackDot.classList.replace('bg-green-500', 'bg-red-500');
-                this.trackDot.classList.remove('animate-pulse');
             }
             
             if (zoom !== null) {
@@ -871,7 +816,7 @@
         }
     }
 
-    // --- Hand Tracking - OPTIMIZED FOR RESPONSIVENESS ---
+    // --- Hand Tracking ---
     class HandTracker {
         constructor() {
             this.videoElement = document.getElementsByClassName('input_video')[0];
@@ -881,10 +826,6 @@
             this.cameraUtils = null;
             this.ui = null;
             
-            // NEW: Cached values for performance
-            this.lastLandmarkTime = 0;
-            this.frameCount = 0;
-            
             this.init();
         }
         
@@ -893,12 +834,11 @@
                 locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
             });
             
-            // OPTIMIZED: Lower confidence for faster response
             this.hands.setOptions({
                 maxNumHands: 1,
-                modelComplexity: 0, // Reduced from 1 for faster processing
+                modelComplexity: 1,
                 minDetectionConfidence: 0.5,
-                minTrackingConfidence: 0.3  // Reduced from 0.5 for less stutter
+                minTrackingConfidence: 0.5
             });
             
             this.hands.onResults(this.onResults.bind(this));
@@ -907,23 +847,16 @@
                 onFrame: async () => {
                     await this.hands.send({ image: this.videoElement });
                 },
-                width: 240,  // Reduced from 320 for faster processing
-                height: 180  // Reduced from 240
+                width: 320,
+                height: 240
             });
         }
         
-        // NEW: Low-pass filter for smooth values without lag
-        lowPassFilter(newValue, oldValue, alpha = 0.6) {
-            return alpha * newValue + (1 - alpha) * oldValue;
-        }
-        
-        // NEW: Improved weighted average with exponential weighting
-        getWeightedAverageExponential(history) {
+        getWeightedAverage(history) {
             if(history.length === 0) return 0.5;
             let sum = 0, weightSum = 0;
-            const base = 1.5; // Exponential weighting
             for(let i = 0; i < history.length; i++) {
-                const w = Math.pow(base, i); // More weight to recent values
+                const w = i + 1;
                 sum += history[i] * w;
                 weightSum += w;
             }
@@ -931,11 +864,6 @@
         }
         
         onResults(results) {
-            this.frameCount++;
-            
-            // Only process every other frame for better performance
-            if (this.frameCount % 2 !== 0) return;
-            
             if (uiManager.loader.style.display !== 'none') {
                 uiManager.loader.style.display = 'none';
                 uiManager.updateStatus("Connected");
@@ -957,23 +885,14 @@
                 drawConnectors(this.canvasCtx, landmarks, HAND_CONNECTIONS, {color: 'rgba(168, 85, 247, 0.5)', lineWidth: 2});
                 drawLandmarks(this.canvasCtx, landmarks, {color: '#FFFFFF', lineWidth: 1, radius: 2});
                 
-                // Calculate zoom with improved response curve
+                // Calculate zoom based on hand size
                 const wrist = landmarks[0];
                 const midMCP = landmarks[9];
                 const handSize = Math.hypot(wrist.x - midMCP.x, wrist.y - midMCP.y);
-                
-                // NEW: Exponential response curve for zoom (more control at smaller sizes)
-                let zoom = Math.pow(handSize / CONSTANTS.BASE_HAND_SIZE, 1.2);
+                let zoom = handSize / CONSTANTS.BASE_HAND_SIZE;
                 zoom = Math.max(CONSTANTS.MIN_ZOOM, Math.min(zoom, CONSTANTS.MAX_ZOOM));
-                
-                // Update smooth values
-                state.updateSmoothValues(landmarks[9].x, landmarks[9].y, zoom);
-                
-                // Use smooth values for immediate response
-                state.targetScale = state.smoothZoom;
-                state.calculateVelocity(landmarks[9].x, landmarks[9].y);
-                
-                uiManager.updateTracking('tracking', state.targetScale);
+                state.targetScale = zoom;
+                uiManager.updateTracking('tracking', zoom);
                 
                 // Calculate gesture openness
                 const thumbTip = landmarks[4];
@@ -981,7 +900,7 @@
                 const pinchDist = Math.hypot(thumbTip.x - indexTip.x, thumbTip.y - indexTip.y);
                 const openness = pinchDist / handSize;
                 
-                // Gesture logic - OPTIMIZED for faster response
+                // Gesture logic
                 if (openness < CONSTANTS.FIST_THRESHOLD) {
                     // Fist detected: Trigger automatic scatter
                     state.isExploded = true;
@@ -995,8 +914,6 @@
                         let val = (openness - CONSTANTS.FIST_THRESHOLD) / range;
                         val = Math.max(0, Math.min(1, val));
                         
-                        // NEW: Cubic easing for more natural feel
-                        val = val * val * (3 - 2 * val);
                         state.targetScatter = 1.0 - val;
                         
                         // Reset latch if fully assembled
@@ -1011,43 +928,34 @@
                     }
                 }
                 
-                // NEW: Simplified smoothing with velocity-based adaptation
+                // Smoothing with stability check
                 state.xHistory.push(landmarks[9].x);
                 state.yHistory.push(landmarks[9].y);
                 if(state.xHistory.length > CONSTANTS.HISTORY_SIZE) state.xHistory.shift();
                 if(state.yHistory.length > CONSTANTS.HISTORY_SIZE) state.yHistory.shift();
                 
-                // Use exponential weighted average for smoother movement
-                const smoothedX = this.getWeightedAverageExponential(state.xHistory);
-                const smoothedY = this.getWeightedAverageExponential(state.yHistory);
+                const smoothedX = this.getWeightedAverage(state.xHistory);
+                const smoothedY = this.getWeightedAverage(state.yHistory);
                 
                 const deltaX = Math.abs(smoothedX - state.lastStableX);
                 const deltaY = Math.abs(smoothedY - state.lastStableY);
                 
-                // NEW: Dynamic threshold based on velocity
-                const dynamicThreshold = CONSTANTS.STABILITY_THRESHOLD * 
-                    (1 + Math.min(Math.abs(state.velocityX) + Math.abs(state.velocityY), 0.2));
+                let stableX = state.lastStableX;
+                let stableY = state.lastStableY;
                 
-                if (deltaX > dynamicThreshold) {
+                if (deltaX > CONSTANTS.STABILITY_THRESHOLD) {
                     state.lastStableX = smoothedX;
+                    stableX = smoothedX;
                 }
-                if (deltaY > dynamicThreshold) {
+                if (deltaY > CONSTANTS.STABILITY_THRESHOLD) {
                     state.lastStableY = smoothedY;
+                    stableY = smoothedY;
                 }
                 
-                // NEW: Direct mapping with velocity boost for more responsive control
-                const x = state.lastStableX;
-                const y = state.lastStableY;
-                
-                // Apply velocity to rotation for more responsive feel
-                const velocityBoost = 0.5;
-                state.targetRotY = (0.5 - x) * 4.0 + state.velocityX * velocityBoost;
-                state.targetRotX = (0.5 - y) * 4.0 + state.velocityY * velocityBoost;
-                
-                // NEW: Cap rotation speed for control
-                state.targetRotY = Math.max(-6, Math.min(6, state.targetRotY));
-                state.targetRotX = Math.max(-6, Math.min(6, state.targetRotX));
-                
+                const x = stableX;
+                const y = stableY;
+                state.targetRotY = (0.5 - x) * 4.0;
+                state.targetRotX = (0.5 - y) * 4.0;
             } else {
                 state.resetOnHandLoss();
                 uiManager.updateTracking('lost');
@@ -1091,25 +999,20 @@
         animationId = requestAnimationFrame(animate);
         const time = clock.getElapsedTime();
         
-        // NEW: Adaptive lerp speeds based on velocity
-        const rotationLerpSpeed = state.getAdaptiveLerpSpeed(CONSTANTS.ROTATION_LERP_SPEED);
-        const scaleLerpSpeed = state.getAdaptiveLerpSpeed(CONSTANTS.SCALE_LERP_SPEED);
-        const scatterLerpSpeed = state.getAdaptiveLerpSpeed(CONSTANTS.SCATTER_LERP_SPEED);
+        // Update scale
+        state.currentScale += (state.targetScale - state.currentScale) * CONSTANTS.LERP_SPEED;
         
-        // Update scale with adaptive speed
-        state.currentScale += (state.targetScale - state.currentScale) * scaleLerpSpeed;
-        
-        // Update scatter animation with adaptive speed
+        // Update scatter animation
         if (state.isExploded && state.targetScatter > 0.9) {
-            state.currentScatter += (state.targetScatter - state.currentScatter) * (scatterLerpSpeed * 0.5);
+            state.currentScatter += (state.targetScatter - state.currentScatter) * 0.05;
         } else {
-            state.currentScatter += (state.targetScatter - state.currentScatter) * scatterLerpSpeed;
+            state.currentScatter += (state.targetScatter - state.currentScatter) * 0.4;
         }
         
-        // Update rotation with adaptive speed
+        // Update rotation
         if (state.handDetected) {
-            state.rotY += (state.targetRotY - state.rotY) * rotationLerpSpeed;
-            state.rotX += (state.targetRotX - state.rotX) * rotationLerpSpeed;
+            state.rotY += (state.targetRotY - state.rotY) * CONSTANTS.LERP_SPEED;
+            state.rotX += (state.targetRotX - state.rotX) * CONSTANTS.LERP_SPEED;
         } else {
             state.rotY += 0.002;
             state.rotX += (state.targetRotX - state.rotX) * 0.05;
@@ -1217,16 +1120,20 @@
     }
 
     function cleanup() {
+        // Stop animation
         if (animationId) {
             cancelAnimationFrame(animationId);
         }
         
+        // Stop hand tracking
         if (handTracker) {
             handTracker.stop();
         }
         
+        // Dispose Three.js resources
         resourceManager.dispose();
         
+        // Stop camera streams
         if (handTracker && handTracker.videoElement && handTracker.videoElement.srcObject) {
             const stream = handTracker.videoElement.srcObject;
             const tracks = stream.getTracks();
