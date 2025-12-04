@@ -170,7 +170,7 @@
         <!-- Footer Stats -->
         <div class="flex justify-end pointer-events-none">
             <div class="glass-panel rounded-lg px-3 py-1.5 text-right opacity-80 scale-90 origin-bottom-right border-r-2 border-purple-500">
-                <div class="text-[9px] text-purple-300 uppercase tracking-widest">Physics Engine</div>
+                <div class="text-[9px] text-purple-300 uppercase tracking-widest">Direct Control</div>
                 <div class="text-sm font-mono text-white font-bold flex items-center justify-end gap-2">
                     ACTIVE <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
                 </div>
@@ -186,12 +186,10 @@
         ringInner: 26,
         ringOuter: 56,
         
-        // PHYSICS CONFIG
-        friction: 0.92, // How quickly it slows down (0.9 = fast stop, 0.98 = icy)
-        inputForce: 0.08, // How much hand movement affects velocity
-        maxVelocity: 0.1, // Cap max speed
-        
+        // INTERACTION CONFIG (Direct Control)
+        lerpFactor: 0.15, // Smoothness of the follow movement
         deadZone: 0.02,
+        stabilityThreshold: 0.01, // Jitter removal: Hand must move > 1% to update
         historySize: 2
     };
 
@@ -210,11 +208,12 @@
         targetScale: 1,
         currentScale: 1,
         
-        // Physics State
+        // Rotation State
         rotY: 0,
         rotX: 0.2,
-        velY: 0.002, // Initial idle spin
-        velX: 0,
+        
+        targetRotationY: 0,
+        targetRotationX: 0.2,
         
         handDetected: false,
         xHistory: [],
@@ -488,20 +487,36 @@
             const smoothedX = getWeightedAverage(state.xHistory);
             const smoothedY = getWeightedAverage(state.yHistory);
 
-            // --- INERTIA LOGIC ---
+            // --- DIRECT MAPPING LOGIC (No Inertia) ---
             
-            // 1. Calculate Target based on Hand (Mirrored Logic)
-            // Hand Right (x=0) -> Target +1
-            // Hand Left (x=1) -> Target -1
-            const targetX = (0.5 - smoothedX) * 2.0; // Range -1 to 1
-            const targetY = (0.5 - smoothedY) * 2.0; // Range -1 to 1
+            // Calculate differences for stability check
+            const deltaX = Math.abs(smoothedX - state.lastStableX);
+            const deltaY = Math.abs(smoothedY - state.lastStableY);
+            
+            let stableX = state.lastStableX;
+            let stableY = state.lastStableY;
 
-            // 2. Apply Force to Velocity
-            // Move velocity towards target
-            state.velY += (targetX * CONFIG.inputForce);
-            state.velX += (targetY * CONFIG.inputForce);
+            // STABILITY GATE: Only update if moved enough
+            if (deltaX > CONFIG.stabilityThreshold) {
+                state.lastStableX = smoothedX;
+                stableX = smoothedX;
+            }
+            if (deltaY > CONFIG.stabilityThreshold) {
+                state.lastStableY = smoothedY;
+                stableY = smoothedY;
+            }
 
-            // 3. Pinch Scale
+            // Map Position Directly to Rotation Angle
+            // Hand Right (x=0 due to mirror) -> Offset +0.5 -> Rotation +
+            const xOffset = 0.5 - stableX; 
+            const yOffset = 0.5 - stableY;
+            
+            const sensitivity = 5.0; // Multiplier for how much it rotates
+            
+            state.targetRotationY = xOffset * sensitivity;
+            state.targetRotationX = yOffset * sensitivity;
+
+            // Pinch Scale
             const thumbTip = landmarks[4];
             const indexTip = landmarks[8];
             const wrist = landmarks[0];
@@ -518,9 +533,11 @@
             state.targetScale = 1;
             state.xHistory = [];
             state.yHistory = [];
-            // Auto idle spin if no hand
-            state.velY += 0.0001; 
-            if(state.velY > 0.003) state.velY = 0.003;
+            
+            // Gentle Idle
+            state.targetRotationY += 0.001; 
+            // Slowly return X to center
+            state.targetRotationX = state.rotX * 0.95 + 0.2 * 0.05;
         }
         canvasCtx.restore();
     }
@@ -560,19 +577,16 @@
         requestAnimationFrame(animate);
         const time = clock.getElapsedTime();
 
-        // 1. Physics Engine Update
-        
-        // Cap velocity
-        state.velX = Math.max(Math.min(state.velX, CONFIG.maxVelocity), -CONFIG.maxVelocity);
-        state.velY = Math.max(Math.min(state.velY, CONFIG.maxVelocity), -CONFIG.maxVelocity);
-
-        // Apply Velocity to Position
-        state.rotX += state.velX;
-        state.rotY += state.velY;
-
-        // Apply Friction (Inertia Damping)
-        state.velX *= CONFIG.friction;
-        state.velY *= CONFIG.friction;
+        // 1. Direct Control Update
+        if (state.handDetected) {
+            // Smoothly interpolate towards the target angle
+            state.rotY += (state.targetRotationY - state.rotY) * CONFIG.lerpFactor;
+            state.rotX += (state.targetRotationX - state.rotX) * CONFIG.lerpFactor;
+        } else {
+            // Idle behavior
+            state.rotY += 0.001;
+            state.rotX += (state.targetRotationX - state.rotX) * 0.05;
+        }
         
         // Scale Lerp
         state.currentScale += (state.targetScale - state.currentScale) * 0.1;
@@ -586,10 +600,6 @@
         const positionsAttribute = particlesGeometry.attributes.position;
         const positionsArray = positionsAttribute.array;
         
-        // Use phase for twinkle
-        // Accessing the 'size' attribute directly is hard in PointsMaterial without shader modification,
-        // so we manipulate position slightly for "life"
-        
         for (let i = 0; i < CONFIG.particleCount; i++) {
             if (i > CONFIG.particleCount * 0.4) {
                  // Rings flow
@@ -600,8 +610,6 @@
                  // Magical drift
                  const x = positionsArray[ix];
                  const z = positionsArray[iz];
-                 // Rotate points around Y axis mathematically for flow effect without changing rotation object
-                 // Optimization: Just minimal vertical wave
                  positionsArray[iy] = (Math.sin(time * 2 + x * 0.1) * 0.05) * state.currentScale;
             }
         }
