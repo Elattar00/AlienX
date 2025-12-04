@@ -22,7 +22,7 @@
         body { 
             margin: 0; 
             overflow: hidden; 
-            background-color: #050505; 
+            background-color: #020205; /* Deep space black */
             font-family: 'Inter', sans-serif;
             touch-action: none; 
             -webkit-user-select: none;
@@ -31,11 +31,11 @@
         
         /* Glassmorphism UI */
         .glass-panel {
-            background: rgba(20, 20, 30, 0.65);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            background: rgba(15, 15, 25, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
         }
 
         #canvas-container {
@@ -45,6 +45,8 @@
             width: 100%;
             height: 100%;
             z-index: 1;
+            /* Subtler gradient background */
+            background: radial-gradient(circle at center, #0b1026 0%, #000000 100%);
         }
 
         #ui-layer {
@@ -73,9 +75,9 @@
             z-index: -1;
         }
 
-        /* Mirror the canvas for selfie-mode feel */
-        .mirrored-output {
-            transform: scaleX(-1);
+        /* Standard Canvas (No Mirroring) */
+        .output_canvas {
+            transform: scaleX(1); 
         }
         
         .loader {
@@ -89,14 +91,20 @@
         
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Pulse animation for start button */
+        .btn-pulse {
+            animation: scanner 2s infinite;
+        }
         @keyframes scanner {
             0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
             70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
             100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
         }
-        .btn-pulse {
-            animation: scanner 2s infinite;
+
+        /* Theme Button Active State */
+        .theme-btn.active {
+            border-color: white;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            transform: scale(1.1);
         }
     </style>
 </head>
@@ -114,34 +122,34 @@
             <!-- Title Card -->
             <div class="glass-panel rounded-2xl p-4 text-white w-full md:w-auto md:max-w-xs interactive-element transition-all">
                 <div class="flex justify-between items-center mb-2">
-                    <h1 class="text-lg md:text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-300 to-purple-400">
+                    <h1 class="text-lg md:text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-500">
                         Aether Saturn
                     </h1>
-                    <div class="flex items-center text-[10px] md:text-xs bg-black bg-opacity-30 rounded-full px-2 py-1">
+                    <div class="flex items-center text-[10px] md:text-xs bg-black bg-opacity-40 rounded-full px-2 py-1 border border-white/10">
                         <span id="status-indicator" class="w-1.5 h-1.5 rounded-full bg-yellow-400 mr-2 animate-pulse"></span>
                         <span id="status-text">Standby</span>
                     </div>
                 </div>
                 
-                <div class="text-[11px] md:text-xs text-gray-300 space-y-1 font-medium">
-                    <p class="flex items-center"><span class="mr-2 opacity-70">🤏</span> Pinch to Shrink / Expand</p>
-                    <p class="flex items-center"><span class="mr-2 opacity-70">👋</span> Move Hand to Rotate</p>
+                <div class="text-[11px] md:text-xs text-gray-400 space-y-1 font-medium tracking-wide">
+                    <p class="flex items-center"><span class="mr-2 text-cyan-400">🤏</span> Pinch to Resize</p>
+                    <p class="flex items-center"><span class="mr-2 text-cyan-400">👋</span> Move Hand to Rotate</p>
                 </div>
             </div>
 
             <!-- Camera & Controls -->
             <div class="glass-panel rounded-2xl p-2 flex flex-row md:flex-col items-center gap-3 interactive-element">
                 <!-- Camera Preview Container -->
-                <div class="relative w-28 h-20 md:w-36 md:h-28 bg-black rounded-xl overflow-hidden border border-gray-600 shadow-2xl shrink-0">
+                <div class="relative w-28 h-20 md:w-36 md:h-28 bg-black rounded-xl overflow-hidden border border-gray-700 shadow-2xl shrink-0">
                     <video class="input_video" playsinline webkit-playsinline></video>
                     
-                    <!-- Mirrored Canvas for Selfie Mode -->
-                    <canvas class="output_canvas mirrored-output absolute top-0 left-0 w-full h-full object-cover"></canvas>
+                    <!-- Canvas (Un-mirrored) -->
+                    <canvas class="output_canvas absolute top-0 left-0 w-full h-full object-cover opacity-90"></canvas>
                     
                     <!-- Start Button Overlay -->
-                    <div id="start-overlay" class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-80 z-20 cursor-pointer backdrop-blur-[2px]">
-                        <button id="start-btn" class="btn-pulse bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold py-1.5 px-4 rounded-full transition border border-blue-400">
-                            TAP TO START
+                    <div id="start-overlay" class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-80 z-20 cursor-pointer backdrop-blur-sm">
+                        <button id="start-btn" class="btn-pulse bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold py-1.5 px-4 rounded-full transition border border-blue-400 shadow-[0_0_15px_rgba(37,99,235,0.5)]">
+                            INITIALIZE
                         </button>
                     </div>
 
@@ -156,12 +164,17 @@
                     </div>
                 </div>
                 
-                <!-- Color Picker (Compact for Mobile) -->
+                <!-- Themes & Color Picker -->
                 <div class="flex flex-col justify-center w-full px-1">
-                    <label class="text-[9px] text-gray-400 mb-1 hidden md:block">Atmosphere</label>
-                    <div class="flex items-center justify-between md:justify-start gap-2">
-                        <input type="color" id="color-picker" value="#4aa8ff" class="w-8 h-8 rounded-full cursor-pointer border-2 border-white border-opacity-20 bg-transparent p-0 overflow-hidden">
-                        <span class="text-[10px] text-gray-400 font-mono md:inline hidden" id="color-hex">#4aa8ff</span>
+                    <label class="text-[9px] text-gray-500 mb-1 hidden md:block uppercase tracking-wider">Atmosphere Themes</label>
+                    <div class="flex items-center gap-3 overflow-x-auto pb-1" id="theme-container">
+                        <!-- Themes injected by JS -->
+                    </div>
+                    
+                    <!-- Custom Picker -->
+                    <div class="flex items-center gap-2 mt-2 pt-2 border-t border-white/10">
+                        <span class="text-[9px] text-gray-500 uppercase tracking-widest">Custom</span>
+                        <input type="color" id="color-picker" value="#4aa8ff" class="w-6 h-6 rounded-full cursor-pointer border-none bg-transparent p-0">
                     </div>
                 </div>
             </div>
@@ -169,26 +182,41 @@
 
         <!-- Footer Stats -->
         <div class="flex justify-end pointer-events-none">
-            <div class="glass-panel rounded-lg px-3 py-1.5 text-right opacity-80 scale-90 origin-bottom-right">
-                <div class="text-[9px] text-gray-400 uppercase tracking-widest">Particles</div>
-                <div class="text-sm font-mono text-white font-bold">12,000</div>
+            <div class="glass-panel rounded-lg px-3 py-1.5 text-right opacity-80 scale-90 origin-bottom-right border-l-2 border-cyan-500">
+                <div class="text-[9px] text-cyan-400 uppercase tracking-widest">System Status</div>
+                <div class="text-sm font-mono text-white font-bold flex items-center justify-end gap-2">
+                    ONLINE <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                </div>
             </div>
         </div>
     </div>
 
 <script>
-    // --- Mobile Optimization Config ---
+    // --- Config ---
     const CONFIG = {
-        particleCount: 12000, 
+        particleCount: 16000, // Increased slightly for better density
         sphereRadius: 18,
-        ringInner: 24,
-        ringOuter: 48,
-        baseColor: 0x4aa8ff,
-        lerpFactor: 0.4, // HIGH value for Instant/Real-Time response
-        deadZone: 0.02,   // Very small deadzone for immediate reaction
+        ringInner: 26,
+        ringOuter: 54,
+        lerpFactor: 0.15, 
+        deadZone: 0.03,
+        historySize: 3 
     };
 
-    // --- State Management ---
+    // --- Color Themes (Analogous & Harmonious) ---
+    // Core: The planet color
+    // Ring: The outer ring color
+    // Using softer transitions (e.g., Cyan -> Blue, not Cyan -> Red)
+    const THEMES = [
+        { name: 'Nebula', core: '#4facfe', ring: '#00f2fe' },   // Soft Blue -> Cyan
+        { name: 'Sunset', core: '#f6d365', ring: '#fda085' },   // Soft Orange -> Peach
+        { name: 'Forest', core: '#84fab0', ring: '#8fd3f4' },   // Mint -> Light Blue
+        { name: 'Void',   core: '#e0c3fc', ring: '#8ec5fc' },   // Lavender -> Periwinkle
+        { name: 'Royal',  core: '#a18cd1', ring: '#fbc2eb' }    // Purple -> Pink
+    ];
+    let currentTheme = THEMES[0];
+
+    // --- State ---
     const state = {
         targetScale: 1,
         currentScale: 1,
@@ -197,17 +225,39 @@
         targetRotationX: 0.2, 
         currentRotationX: 0.2,
         handDetected: false,
-        // History arrays removed for real-time input
+        xHistory: [],
+        yHistory: []
     };
 
-    // --- Three.js Setup ---
+    // --- Texture (Soft Glow) ---
+    function getTexture() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 32;
+        canvas.height = 32;
+        const ctx = canvas.getContext('2d');
+        
+        // Softer gradient with less opacity at core to allow blending
+        const gradient = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.9)'); 
+        gradient.addColorStop(0.3, 'rgba(255, 255, 255, 0.4)');
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)'); 
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 32, 32);
+        
+        const texture = new THREE.Texture(canvas);
+        texture.needsUpdate = true;
+        return texture;
+    }
+
+    // --- Three.js ---
     const container = document.getElementById('canvas-container');
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x050505, 0.008);
+    scene.fog = new THREE.FogExp2(0x020205, 0.006); // Dark fog matching bg
 
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.z = 80;
-    camera.position.y = 20;
+    camera.position.y = 15;
     camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: true, powerPreference: "high-performance" });
@@ -215,17 +265,41 @@
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); 
     container.appendChild(renderer.domElement);
 
-    // --- Particle System ---
+    // --- Background Stars ---
+    const starGeo = new THREE.BufferGeometry();
+    const starPos = [];
+    for(let i=0; i<1200; i++) {
+        starPos.push((Math.random() - 0.5) * 700);
+        starPos.push((Math.random() - 0.5) * 700);
+        starPos.push((Math.random() - 0.5) * 700);
+    }
+    starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
+    const starMat = new THREE.PointsMaterial({color: 0x8899aa, size: 0.6, transparent: true, opacity: 0.5});
+    const stars = new THREE.Points(starGeo, starMat);
+    scene.add(stars);
+
+    // --- Saturn Particles ---
     const particlesGeometry = new THREE.BufferGeometry();
     const positions = [];
+    const colors = [];
     const originalPositions = []; 
-    const randomness = []; 
-
-    // Generate Sphere
-    for (let i = 0; i < CONFIG.particleCount * 0.4; i++) {
-        const phi = Math.acos(-1 + (2 * i) / (CONFIG.particleCount * 0.4));
-        const theta = Math.sqrt((CONFIG.particleCount * 0.4) * Math.PI) * phi;
-        const r = CONFIG.sphereRadius + (Math.random() - 0.5) * 1.5; 
+    const sizes = [];
+    
+    // Initial Colors
+    const colorCore = new THREE.Color(currentTheme.core);
+    const colorRing = new THREE.Color(currentTheme.ring);
+    
+    // 1. Planet Body (The Core)
+    const coreCount = Math.floor(CONFIG.particleCount * 0.4);
+    for (let i = 0; i < coreCount; i++) {
+        // Uniform sphere distribution
+        const phi = Math.acos(-1 + (2 * i) / coreCount);
+        const theta = Math.sqrt(coreCount * Math.PI) * phi;
+        
+        // Volumetric surface: Add random fuzziness to radius
+        // This makes the edge "soft" instead of a hard shell
+        const fuzz = (Math.random() - 0.5) * 2.0;
+        const r = CONFIG.sphereRadius + fuzz; 
         
         const x = r * Math.cos(theta) * Math.sin(phi);
         const y = r * Math.sin(theta) * Math.sin(phi);
@@ -233,50 +307,147 @@
 
         positions.push(x, y, z);
         originalPositions.push(x, y, z);
-        randomness.push(Math.random(), Math.random(), Math.random());
-    }
+        
+        // Banding Logic: Modify color based on Latitude (Y)
+        // Normalize Y from -Radius to +Radius -> 0 to 1
+        const lat = (y / CONFIG.sphereRadius + 1) * 0.5;
+        
+        // Create bands using sine waves
+        const bandMix = Math.sin(lat * 20) * 0.1 + 0.9; // Variation factor
+        
+        const particleColor = colorCore.clone();
+        // Shift HSL lightness for bands
+        const hsl = {};
+        particleColor.getHSL(hsl);
+        particleColor.setHSL(hsl.h, hsl.s, hsl.l * bandMix);
 
-    // Generate Rings
-    const ringCount = CONFIG.particleCount * 0.6;
+        colors.push(particleColor.r, particleColor.g, particleColor.b);
+        
+        // Larger, softer particles for core
+        sizes.push(1.8 + Math.random());
+    }
+    
+    // 2. Rings
+    const ringCount = CONFIG.particleCount - coreCount;
     for (let i = 0; i < ringCount; i++) {
         const r = THREE.MathUtils.randFloat(CONFIG.ringInner, CONFIG.ringOuter);
         const theta = Math.random() * Math.PI * 2;
-        
         const x = r * Math.cos(theta);
         const z = r * Math.sin(theta);
-        const y = (Math.random() - 0.5) * 1.2; 
+        const y = (Math.random() - 0.5) * 0.4; // Very thin
 
         positions.push(x, y, z);
         originalPositions.push(x, y, z);
-        randomness.push(Math.random(), Math.random(), Math.random());
+        
+        // Smooth Color Gradient from Inner to Outer Ring
+        const mix = (r - CONFIG.ringInner) / (CONFIG.ringOuter - CONFIG.ringInner);
+        
+        // Start from Core color, fade to Ring color
+        const c = new THREE.Color().lerpColors(colorCore, colorRing, mix);
+        
+        colors.push(c.r, c.g, c.b);
+        
+        // Varied sizes for dust vs rocks
+        sizes.push(0.6 + Math.random() * 0.8);
     }
 
     particlesGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    particlesGeometry.setAttribute('aRandom', new THREE.Float32BufferAttribute(randomness, 3));
+    particlesGeometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    particlesGeometry.setAttribute('size', new THREE.Float32BufferAttribute(sizes, 1));
 
     const particlesMaterial = new THREE.PointsMaterial({
-        color: CONFIG.baseColor,
-        size: window.devicePixelRatio > 1 ? 0.9 : 0.6, 
+        size: 1.5,
+        map: getTexture(), 
+        vertexColors: true,
         transparent: true,
-        opacity: 0.85,
+        opacity: 0.8, // Slightly more transparent for gas effect
         blending: THREE.AdditiveBlending,
+        depthWrite: false,
         sizeAttenuation: true
     });
 
     const particleSystem = new THREE.Points(particlesGeometry, particlesMaterial);
     scene.add(particleSystem);
 
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-    scene.add(ambientLight);
-
-    // --- Logic Helpers ---
-
-    const colorPicker = document.getElementById('color-picker');
-    colorPicker.addEventListener('input', (e) => {
-        particlesMaterial.color = new THREE.Color(e.target.value);
+    // --- UI Logic & Theme Switching ---
+    
+    const themeContainer = document.getElementById('theme-container');
+    
+    THEMES.forEach((theme, index) => {
+        const btn = document.createElement('div');
+        btn.className = `theme-btn min-w-[24px] w-6 h-6 rounded-full cursor-pointer border-2 border-white/20 transition-all duration-200 ${index === 0 ? 'active' : ''}`;
+        btn.style.background = `linear-gradient(135deg, ${theme.core} 0%, ${theme.ring} 100%)`;
+        
+        btn.addEventListener('click', () => applyTheme(theme, btn));
+        themeContainer.appendChild(btn);
     });
 
-    // --- MediaPipe & Camera ---
+    function applyTheme(theme, btnElement) {
+        currentTheme = theme;
+        
+        document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+        if(btnElement) btnElement.classList.add('active');
+
+        const colorC = new THREE.Color(theme.core);
+        const colorR = new THREE.Color(theme.ring);
+        const colorsAttr = particlesGeometry.attributes.color;
+        const positionsAttr = particlesGeometry.attributes.position;
+        const coreCount = Math.floor(CONFIG.particleCount * 0.4);
+        
+        // Update Core with Banding
+        for(let i=0; i < coreCount; i++) {
+            const y = positionsAttr.getY(i);
+            const lat = (y / CONFIG.sphereRadius + 1) * 0.5;
+            const bandMix = Math.sin(lat * 20) * 0.1 + 0.9;
+            
+            const pc = colorC.clone();
+            const hsl = {};
+            pc.getHSL(hsl);
+            pc.setHSL(hsl.h, hsl.s, hsl.l * bandMix);
+            
+            colorsAttr.setXYZ(i, pc.r, pc.g, pc.b);
+        }
+        
+        // Update Rings with Gradient
+        for(let i = coreCount; i < CONFIG.particleCount; i++) {
+            const x = positionsAttr.getX(i);
+            const z = positionsAttr.getZ(i);
+            const dist = Math.sqrt(x*x + z*z);
+            
+            let mix = (dist - CONFIG.ringInner) / (CONFIG.ringOuter - CONFIG.ringInner);
+            if (mix < 0) mix = 0; if (mix > 1) mix = 1;
+            
+            const c = new THREE.Color().lerpColors(colorC, colorR, mix);
+            colorsAttr.setXYZ(i, c.r, c.g, c.b);
+        }
+        
+        colorsAttr.needsUpdate = true;
+        document.getElementById('color-picker').value = theme.core;
+    }
+
+    // Custom Picker with complementary logic
+    document.getElementById('color-picker').addEventListener('input', (e) => {
+        const newCore = e.target.value;
+        const c = new THREE.Color(newCore);
+        const hsl = {};
+        c.getHSL(hsl);
+        // Analogous color for ring (shift hue by 30 deg)
+        const ringColor = new THREE.Color().setHSL((hsl.h + 0.08) % 1, hsl.s, hsl.l); 
+        applyTheme({ core: newCore, ring: '#' + ringColor.getHexString() }, null);
+    });
+
+    function getWeightedAverage(history) {
+        if(history.length === 0) return 0.5;
+        let sum = 0, weightSum = 0;
+        for(let i=0; i<history.length; i++) {
+            const w = i + 1;
+            sum += history[i] * w;
+            weightSum += w;
+        }
+        return sum / weightSum;
+    }
+
+    // --- MediaPipe ---
     const videoElement = document.getElementsByClassName('input_video')[0];
     const canvasElement = document.getElementsByClassName('output_canvas')[0];
     const canvasCtx = canvasElement.getContext('2d');
@@ -292,7 +463,7 @@
     function onResults(results) {
         if (loader.style.display !== 'none') {
             loader.style.display = 'none';
-            statusText.textContent = "Tracking Active";
+            statusText.textContent = "System Active";
             statusInd.classList.replace('bg-yellow-400', 'bg-green-400');
         }
 
@@ -301,30 +472,30 @@
 
         canvasCtx.save();
         canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+        
+        canvasCtx.filter = 'grayscale(100%) contrast(1.2) brightness(0.8)';
         canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+        canvasCtx.filter = 'none'; 
         
         if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
             const landmarks = results.multiHandLandmarks[0];
             state.handDetected = true;
 
-            drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: '#60a5fa', lineWidth: 3});
-            drawLandmarks(canvasCtx, landmarks, {color: '#f472b6', lineWidth: 1, radius: 3});
+            const themeColor = currentTheme.core; 
+            drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: 'rgba(255,255,255,0.3)', lineWidth: 2});
+            drawLandmarks(canvasCtx, landmarks, {color: themeColor, lineWidth: 1, radius: 2});
 
-            // 1. DIRECT RAW INPUT (Real-time, no history smoothing)
-            const rawX = landmarks[9].x;
-            const rawY = landmarks[9].y;
+            state.xHistory.push(landmarks[9].x);
+            state.yHistory.push(landmarks[9].y);
+            if(state.xHistory.length > CONFIG.historySize) state.xHistory.shift();
+            if(state.yHistory.length > CONFIG.historySize) state.yHistory.shift();
 
-            // 2. LOGIC (MIRRORED SELFIE MODE)
-            // Camera is Standard (Object on Left = x~0).
-            // CSS mirrors it visually (Object appears on Right).
-            // We want "Hand on Screen Right" -> "Rotate Right".
-            // Screen Right corresponds to Camera Left (x ~ 0).
-            // Formula: (Center - x) = (0.5 - 0.1) = +0.4 (Right Turn).
-            
-            let xOffsetRaw = 0.5 - rawX; 
+            const smoothedX = getWeightedAverage(state.xHistory);
+            const smoothedY = getWeightedAverage(state.yHistory);
+
+            let xOffsetRaw = smoothedX - 0.5; 
             let xOffsetApplied = 0;
 
-            // Dead Zone
             if (Math.abs(xOffsetRaw) > CONFIG.deadZone) {
                 const sign = Math.sign(xOffsetRaw);
                 xOffsetApplied = xOffsetRaw - (sign * CONFIG.deadZone);
@@ -332,20 +503,17 @@
                 xOffsetApplied *= rangeScale;
             }
 
-            // Non-linear Sensitivity - Fast Response
-            state.targetRotationY = Math.sign(xOffsetApplied) * Math.pow(Math.abs(xOffsetApplied), 1.2) * 6.0;
+            state.targetRotationY = Math.sign(xOffsetApplied) * Math.pow(Math.abs(xOffsetApplied), 1.2) * 5.0;
 
-            // Vertical Tilt (Inverted for natural "pull" feel)
-            const yOffsetRaw = 0.5 - rawY;
+            const yOffsetRaw = 0.5 - smoothedY;
             let yOffsetApplied = 0;
             if (Math.abs(yOffsetRaw) > CONFIG.deadZone) {
                 const sign = Math.sign(yOffsetRaw);
                 yOffsetApplied = yOffsetRaw - (sign * CONFIG.deadZone);
                 yOffsetApplied *= (0.5 / (0.5 - CONFIG.deadZone));
             }
-            state.targetRotationX = yOffsetApplied * 5.0;
+            state.targetRotationX = yOffsetApplied * 4.0;
 
-            // 3. PINCH SCALE
             const thumbTip = landmarks[4];
             const indexTip = landmarks[8];
             const wrist = landmarks[0];
@@ -354,18 +522,16 @@
             
             const normalizedOpenness = pinchDist / scaleRef;
             let expansion = (normalizedOpenness - 0.25) * 2.5; 
-            
             if (expansion < 0.15) expansion = 0.15; 
             if (expansion > 3.5) expansion = 3.5;
-            
             state.targetScale = expansion;
 
         } else {
             state.handDetected = false;
             state.targetScale = 1;
-            
-            // Idle Drift
-            state.targetRotationY += 0.002;
+            state.xHistory = [];
+            state.yHistory = [];
+            state.targetRotationY += 0.0015; 
             state.targetRotationX = state.currentRotationX * 0.95 + 0.2 * 0.05; 
         }
         canvasCtx.restore();
@@ -392,10 +558,11 @@
         height: 240
     });
     
-    // --- Mobile Start Interaction ---
     startBtn.addEventListener('click', () => {
         if (window.location.protocol === 'file:') {
-            showError("Security Error", "Cannot run on local file system (file://). Please use a local server or GitHub Pages.");
+            errorTitle.textContent = "Security Error";
+            errorDesc.textContent = "Cannot run local file. Use a local server.";
+            errorOverlay.style.display = 'flex';
             return;
         }
 
@@ -403,16 +570,15 @@
         loader.style.display = 'flex';
         statusText.textContent = "Requesting Cam...";
         
-        // Mobile-friendly camera request
         navigator.mediaDevices.getUserMedia({ 
             video: { 
-                facingMode: 'user', // Prefer front camera
+                facingMode: 'user', 
                 width: { ideal: 320 },
                 height: { ideal: 240 }
             } 
         }).then(stream => {
             stream.getTracks().forEach(track => track.stop()); 
-            statusText.textContent = "Loading AI...";
+            statusText.textContent = "Initializing...";
             cameraUtils.start().catch(handleCameraError);
         }).catch(handleCameraError);
     });
@@ -420,22 +586,15 @@
     function handleCameraError(err) {
         console.error(err);
         loader.style.display = 'none';
-        
         let title = "Camera Error";
-        let msg = "Unknown error occurred.";
-
+        let msg = "Unknown error.";
         if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
             title = "Permission Denied";
-            msg = "Access blocked. Tap 'AA' or Lock icon in URL bar to allow camera.";
+            msg = "Access blocked. Tap Lock icon in URL bar.";
         } else if (err.name === 'NotFoundError') {
             title = "No Camera";
             msg = "No front camera found.";
         }
-        
-        showError(title, msg);
-    }
-
-    function showError(title, msg) {
         errorTitle.textContent = title;
         errorDesc.textContent = msg;
         errorOverlay.style.display = 'flex';
@@ -443,31 +602,26 @@
         statusInd.classList.replace('bg-yellow-400', 'bg-red-500');
     }
 
-    // --- Animation Loop ---
     const clock = new THREE.Clock();
 
     function animate() {
         requestAnimationFrame(animate);
-        
         const time = clock.getElapsedTime();
 
-        // High Speed State Updates
         state.currentScale += (state.targetScale - state.currentScale) * CONFIG.lerpFactor;
         
         if (state.handDetected) {
             state.currentRotationY += (state.targetRotationY - state.currentRotationY) * CONFIG.lerpFactor;
             state.currentRotationX += (state.targetRotationX - state.currentRotationX) * CONFIG.lerpFactor;
         } else {
-            state.currentRotationY += 0.003; 
+            state.currentRotationY += 0.0015; 
             state.currentRotationX += (state.targetRotationX - state.currentRotationX) * 0.05;
         }
 
-        // Apply Transforms
         particleSystem.rotation.y = state.currentRotationY;
         particleSystem.rotation.x = state.currentRotationX;
-        particleSystem.rotation.z = Math.cos(time * 0.15) * 0.08;
+        particleSystem.rotation.z = Math.cos(time * 0.1) * 0.05;
 
-        // Update Particles
         const positionsAttribute = particlesGeometry.attributes.position;
         const positionsArray = positionsAttribute.array;
 
@@ -483,39 +637,37 @@
             let px = ox * state.currentScale;
             let py = oy * state.currentScale;
             let pz = oz * state.currentScale;
-
-            // Organic Wave Movement
-            const noise = Math.sin(time * 1.5 + i * 0.05) * 0.3 * state.currentScale;
+            
+            const noise = Math.sin(time * 1.0 + i * 0.01) * 0.2 * state.currentScale;
             
             if (i > CONFIG.particleCount * 0.4) {
-                 // Ring Drift
-                 const drift = Math.sin(time * 0.5 + i) * 0.15;
-                 px += drift;
-                 pz += Math.cos(time * 0.5 + i) * 0.15;
+                 const angle = Math.atan2(oz, ox);
+                 const radius = Math.sqrt(ox*ox + oz*oz);
+                 const flow = time * 0.2 + (50 / radius); 
+                 
+                 const driftX = Math.cos(angle + flow) * radius * state.currentScale;
+                 const driftZ = Math.sin(angle + flow) * radius * state.currentScale;
+                 
+                 positionsArray[ix] = driftX;
+                 positionsArray[iy] = py + Math.sin(time * 2 + i)*0.1; 
+                 positionsArray[iz] = driftZ;
             } else {
-                // Sphere Pulse
-                px += noise;
-                py += noise;
-                pz += noise;
+                positionsArray[ix] = px + noise;
+                positionsArray[iy] = py + noise;
+                positionsArray[iz] = pz + noise;
             }
-
-            positionsArray[ix] = px;
-            positionsArray[iy] = py;
-            positionsArray[iz] = pz;
         }
-
         positionsAttribute.needsUpdate = true;
+        
+        stars.rotation.y = time * 0.02;
         renderer.render(scene, camera);
     }
-
     animate();
-
     window.addEventListener('resize', () => {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
         renderer.setSize(window.innerWidth, window.innerHeight);
     });
-
 </script>
 </body>
 </html>
