@@ -207,6 +207,7 @@
                         <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-indigo-400 to-purple-600" data-shape="dna" title="DNA"></button>
                         <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-cyan-400 to-blue-600" data-shape="atom" title="Atom"></button>
                         <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-amber-300 to-orange-600" data-shape="hourglass" title="Hourglass"></button>
+                        <button class="option-btn w-6 h-6 rounded bg-gradient-to-br from-pink-400 to-rose-600" data-shape="ribbon" title="Ribbon 🎀"></button>
                     </div>
                     <div id="current-shape-label" class="text-[8px] text-center mt-1 text-purple-300 font-medium">Saturn</div>
                 </div>
@@ -704,6 +705,67 @@
                         }
                         const hourglassColor = new THREE.Color().lerpColors(c1, c2, radHour / w);
                         r = hourglassColor.r; g = hourglassColor.g; b = hourglassColor.b;
+                        break;
+
+                    case 'ribbon':
+                        // Knot (Center) - 10%
+                        // Loops (Bow) - 60%
+                        // Tails - 30%
+                        const pKnot = Math.floor(particleCount * 0.1);
+                        const pLoop = Math.floor(particleCount * 0.6);
+                        
+                        if (i < pKnot) {
+                            // Central Knot - Sphere
+                            const rKnot = 8;
+                            const u = Math.random() * Math.PI * 2;
+                            const v = Math.random() * Math.PI;
+                            x = rKnot * Math.sin(v) * Math.cos(u);
+                            y = rKnot * Math.sin(v) * Math.sin(u);
+                            z = (rKnot * 0.6) * Math.cos(v);
+                            r = c1.r; g = c1.g; b = c1.b;
+                        } else if (i < pKnot + pLoop) {
+                            // Loops - Fat Infinity Symbol
+                            const idx = i - pKnot;
+                            const t = (idx / pLoop) * Math.PI * 2;
+                            const scale = 40;
+                            x = scale * Math.sin(t);
+                            y = (scale * 0.5) * Math.sin(2 * t);
+                            
+                            // Add volume/thickness
+                            const thickness = 6;
+                            x += (Math.random() - 0.5) * thickness;
+                            y += (Math.random() - 0.5) * thickness;
+                            z = (Math.random() - 0.5) * 12; // Flatter in Z
+                            
+                            const mix = Math.abs(Math.sin(t)); // 0 at center, 1 at edges
+                            const c = new THREE.Color().lerpColors(c1, c2, mix);
+                            r = c.r; g = c.g; b = c.b;
+                        } else {
+                            // Tails
+                            const idx = i - (pKnot + pLoop);
+                            const pTail = particleCount - (pKnot + pLoop);
+                            const halfTail = pTail / 2;
+                            
+                            // Determine side (Left vs Right)
+                            const isRight = idx >= halfTail;
+                            const t = (idx % halfTail) / halfTail; // 0 to 1 (top to bottom)
+                            const tailLen = 45;
+                            const tailSpread = 25;
+                            const side = isRight ? 1 : -1;
+                            
+                            // Base curve
+                            x = side * (5 + t * tailSpread);
+                            y = -5 - (t * tailLen);
+                            z = Math.sin(t * Math.PI * 2) * 5; // Ripple effect
+                            
+                            // Add volume
+                            x += (Math.random() - 0.5) * 4;
+                            y += (Math.random() - 0.5) * 4;
+                            z += (Math.random() - 0.5) * 4;
+
+                            const c = new THREE.Color().lerpColors(c1, c2, t);
+                            r = c.r; g = c.g; b = c.b;
+                        }
                         break;
                         
                     default:
